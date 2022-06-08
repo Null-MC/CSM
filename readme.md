@@ -3,14 +3,8 @@ A very minimal proof-of-concept/template for using Cascaded Shadow Mapping in Mi
 
 Currently this requires Optifine, as vanilla Fabulous shaders do not provide a shadow pass, and Iris does not support the required `at_midBlock` attribute.
 
-### Special thanks to:
-- Balint: Providing a correct projection matrix function, waving leaves
-- BuilderBoy: Providing player detection
-- Zombye: Providing a correct block-snapping function
-- Lith: Providing entity detection
 
-
-## Shadow Types
+# Shadow Types
 #### None
 No shadows at all.
 
@@ -22,3 +16,14 @@ Uses the Optifine defaults for shadow mapping, but also applies distortion to th
 
 #### CSM
 Splits the shadow map into 4 cascades with varying levels of detail.
+
+
+# Implementation Details
+Coming Soon
+
+
+### Special thanks to:
+- Balint: Providing a correct projection matrix function, waving leaves
+- BuilderBoy: Providing player detection
+- Lith: Providing entity detection
+- Zombye: Providing a correct block-snapping function
