@@ -45,12 +45,12 @@ vec2 GetShadowTilePos(const in int tile) {
 		#ifndef SHADOW_EXCLUDE_ENTITIES
 			#if defined RENDER_SHADOW
 				if (entityId == CSM_PLAYER_ID) return 0;
-				if (mc_Entity.x == 0.0) return CSM_ENTITY_LAYER;
+				if (mc_Entity.x == 0.0) return SHADOW_ENTITY_CASCADE;
 			#elif defined RENDER_TERRAIN
-				if (mc_Entity.x == 0.0) return CSM_ENTITY_LAYER;
+				if (mc_Entity.x == 0.0) return SHADOW_ENTITY_CASCADE;
 			#elif defined RENDER_ENTITIES
 				if (entityId == CSM_PLAYER_ID) return 0;
-				return CSM_ENTITY_LAYER;
+				return SHADOW_ENTITY_CASCADE;
 			#endif
 		#endif
 
