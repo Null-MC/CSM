@@ -1,0 +1,51 @@
+option.SHADOW_TYPE=Shadow Type
+option.SHADOW_TYPE.comment=The type of shadow mapping to use.
+value.SHADOW_TYPE.0=None
+value.SHADOW_TYPE.1=Basic
+value.SHADOW_TYPE.2=Distorted
+value.SHADOW_TYPE.3=CSM
+
+option.shadowMapResolution=Shadow Resolution
+option.shadowMapResolution.comment=Resolution of the shadow map. Higher numbers mean more accurate shadows.
+
+
+screen.SHADOW_OPTIONS=Shadow Options
+screen.SHADOW_OPTIONS.comment=Options for shadows.
+
+option.SHADOW_COLORS=Color Tinting
+option.SHADOW_COLORS.comment=0: Stained glass will cast ordinary shadows. 1: Stained glass will cast colored shadows. 2: Stained glass will not cast any shadows.
+value.SHADOW_COLORS.0=Disabled
+value.SHADOW_COLORS.1=Enabled
+value.SHADOW_COLORS.2=Ignored
+
+option.SHADOW_BIAS=Bias
+option.SHADOW_BIAS.comment=Increase this if you get shadow acne. Decrease this if you get peter panning.
+
+option.SHADOW_DISTORT_FACTOR=Distortion
+option.SHADOW_DISTORT_FACTOR.comment=Distortion factor for the shadow map. Has no effect when shadow distortion is disabled.
+
+option.SHADOW_BRIGHTNESS=Brightness
+option.SHADOW_BRIGHTNESS.comment=Light levels are multiplied by this number when the surface is in shadows.
+
+option.SHADOW_EXCLUDE_FOLIAGE=Hide Foliage
+option.SHADOW_EXCLUDE_FOLIAGE.comment=If true, foliage will not cast shadows.
+
+option.SHADOW_EXCLUDE_ENTITIES=Hide Entities
+option.SHADOW_EXCLUDE_ENTITIES.comment=If true, entities will not cast shadows.
+
+
+screen.WORLD_OPTIONS=World Options
+screen.WORLD_OPTIONS.comment=Options for everything else.
+
+option.ENABLE_WAVING=Waving Plants
+option.ENABLE_WAVING.comment=When enabled, plants will wave using artificial wind.
+
+
+screen.DEBUG_OPTIONS=Debug Options
+screen.DEBUG_OPTIONS.comment=Special options for debugging.
+
+option.DEBUG_SHADOW_BUFFER=Display
+option.DEBUG_SHADOW_BUFFER.comment=Configures which buffer to draw to the screen.
+
+option.DEBUG_CASCADE_TINT=Tint Cascades
+option.DEBUG_CASCADE_TINT.comment=When enabled, shadow casters will show their cascade level by tint coloring.
