@@ -29,7 +29,7 @@
 			#if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
 				//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
 				//in other words, don't darken the back side of it unless something else is casting a shadow on it.
-				if (mc_Entity.x == 10000.0 || mc_Entity.x == 10001.0) geoNoL = 1.0;
+				if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10002.0) geoNoL = 1.0;
 			#endif
 
 			if (geoNoL > 0.0) { //vertex is facing towards the sun

@@ -5,6 +5,7 @@
 #ifdef RENDER_VERTEX
 	in vec4 mc_Entity;
 	in vec3 vaPosition;
+	in vec3 at_midBlock;
 
 	uniform mat4 shadowModelViewInverse;
 	uniform float frameTimeCounter;
@@ -18,8 +19,6 @@
 	#include "/lib/waving.glsl"
 
 	#if SHADOW_TYPE == 3
-		in vec3 at_midBlock;
-
 		uniform int entityId;
 		uniform float near;
 		uniform float far;
@@ -50,7 +49,7 @@
 		#endif
 
 		#ifdef SHADOW_EXCLUDE_FOLIAGE
-			if (mc_Entity.x == 10000.0 || mc_Entity.x == 10001.0) {
+			if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10002.0) {
 				gl_Position = vec4(10.0);
 
 				#if SHADOW_TYPE == 3
@@ -63,7 +62,7 @@
 		vec4 pos = gl_Vertex;
 
 		#ifdef ENABLE_WAVING
-			if (mc_Entity.x == 10001.0)
+			if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10002.0)
 				pos.xyz += GetWavingOffset();
 		#endif
 

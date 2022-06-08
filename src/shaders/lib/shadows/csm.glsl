@@ -7,8 +7,9 @@ vec2 GetShadowTilePos(const in int tile) {
 }
 
 #ifdef RENDER_VERTEX
-	const float tile_scales[4] = float[](0.02, 0.06, 0.3, 1.0);
-	const float tile_bias[4] = float[](0.000015, 0.00004, 0.2, 1.0);
+	const float tile_dist[4] = float[](5, 12, 30, 80);
+	//const float tile_scales[4] = float[](0.02, 0.06, 0.3, 1.1);
+	const float tile_bias[4] = float[](0.000015, 0.00004, 0.00008, 0.00024);
 
 	const vec3 shadowTileColors[4] = vec3[](
 		vec3(1.0, 0.0, 0.0),
@@ -54,30 +55,33 @@ vec2 GetShadowTilePos(const in int tile) {
 			#endif
 		#endif
 
-		if (blockPos.x > -5 && blockPos.x < 5
-		 && blockPos.y > -5 && blockPos.y < 5) return 0;
+		for (int i = 0; i < 4; i++) {
+			if (blockPos.x > -tile_dist[i] && blockPos.x < tile_dist[i]
+			 && blockPos.y > -tile_dist[i] && blockPos.y < tile_dist[i]) return i;
+		}
 
-		if (blockPos.x > -15 && blockPos.x < 15
-		 && blockPos.y > -15 && blockPos.y < 15) return 1;
+		return -1;
 
-		float dist = length(blockPos.xy);
+		// if (blockPos.x > -5 && blockPos.x < 5
+		//  && blockPos.y > -5 && blockPos.y < 5) return 0;
 
-		//if (dist < 5.0) return 0;
-		//if (dist < 20.0) return 1;
+		// if (blockPos.x > -15 && blockPos.x < 15
+		//  && blockPos.y > -15 && blockPos.y < 15) return 1;
 
-		float distF = dist / far;
-		//if (dist < tile_scales[1]) return 1;
-		if (distF < tile_scales[2]) return 2;
-		return 3;
-	}
+		// float dist = length(blockPos.xy);
 
-	// tile: 0-3
-	float GetShadowTileScale(const in int tile) {
-		return tile_scales[tile];
+		// //if (dist < 5.0) return 0;
+		// //if (dist < 20.0) return 1;
+
+		// float distF = dist / far;
+		// //if (dist < tile_scales[1]) return 1;
+		// if (distF < tile_scales[2]) return 2;
+		// return 3;
 	}
 
 	// tile: 0-3
 	vec3 GetShadowTileColor(const in int tile) {
+		if (tile < 0) return vec3(1.0);
 		return shadowTileColors[tile];
 	}
 
@@ -106,13 +110,7 @@ vec2 GetShadowTilePos(const in int tile) {
 
 	// tile: 0-3
 	mat4 GetShadowTileProjectionMatrix(const in int tile, const in vec2 tilePos) {
-		float size;
-		if (tile == 0) size = 10.0;
-		else if (tile == 1) size = 30.0;
-		else {
-			float shadowTileScale = GetShadowTileScale(tile);
-			size = far * shadowTileScale * 2.0;
-		}
+		float size = tile_dist[tile] * 2.0;
 
 		size += 2;
 		float n = near;
@@ -137,7 +135,7 @@ vec2 GetShadowTilePos(const in int tile) {
 				#if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
 					//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
 					//in other words, don't darken the back side of it unless something else is casting a shadow on it.
-					if (mc_Entity.x == 10000.0 || mc_Entity.x == 10001.0) geoNoL = 1.0;
+					if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10002.0) geoNoL = 1.0;
 				#endif
 			#endif
 
@@ -152,7 +150,6 @@ vec2 GetShadowTilePos(const in int tile) {
 					vec2 shadowTilePos = GetShadowTilePos(i);
 					mat4 matShadowView = GetShadowTileViewMatrix(i);
 					mat4 matShadowProj = GetShadowTileProjectionMatrix(i, shadowTilePos);
-					float shadowTileScale = GetShadowTileScale(i);
 					
 					shadowPos[i] = (matShadowProj * (matShadowView * posP)).xyz; //convert to shadow screen space
 					shadowPos[i].xyz = shadowPos[i].xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
@@ -160,7 +157,6 @@ vec2 GetShadowTilePos(const in int tile) {
 
 					//apply shadow bias
 					float bias = tile_bias[i];
-					if (i >= 2) bias = SHADOW_BIAS * shadowTileScale;
 					shadowPos[i].z -= bias / clamp(geoNoL, 0.02, 1.0);
 				}
 

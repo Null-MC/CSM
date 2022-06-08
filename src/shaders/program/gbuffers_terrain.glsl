@@ -5,6 +5,7 @@
 #ifdef RENDER_VERTEX
 	in vec4 mc_Entity;
 	in vec3 vaPosition;
+	in vec3 at_midBlock;
 
 	uniform mat4 gbufferModelView;
 	uniform mat4 gbufferModelViewInverse;
@@ -23,8 +24,6 @@
 	#include "/lib/waving.glsl"
 
 	#if SHADOW_TYPE == 3
-		attribute vec3 at_midBlock;
-
 		uniform float near;
 		uniform float far;
 

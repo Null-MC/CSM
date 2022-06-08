@@ -3,7 +3,7 @@
 		vec4 pos = gl_Vertex;
 
 		#if defined RENDER_TERRAIN && defined ENABLE_WAVING
-			if (mc_Entity.x == 10001.0)
+			if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10002.0)
 				pos.xyz += GetWavingOffset();
 		#endif
 
