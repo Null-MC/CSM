@@ -40,6 +40,9 @@ value.SHADOW_ENTITY_CASCADE.1=2
 value.SHADOW_ENTITY_CASCADE.2=3
 value.SHADOW_ENTITY_CASCADE.3=4
 
+option.SHADOW_CSM_FITWORLD=Fit CSM to World
+option.SHADOW_CSM_FITWORLD.comment=When enabled, the 3rd & 4th cascades for CSM will be stretched to cover the entire view distance.
+
 screen.WORLD_OPTIONS=World Options
 screen.WORLD_OPTIONS.comment=Options for everything else.
 
@@ -52,6 +55,10 @@ screen.DEBUG_OPTIONS.comment=Special options for debugging.
 
 option.DEBUG_SHADOW_BUFFER=Display
 option.DEBUG_SHADOW_BUFFER.comment=Configures which buffer to draw to the screen.
+value.DEBUG_SHADOW_BUFFER.0=gcolor
+value.DEBUG_SHADOW_BUFFER.1=shadowcolor0
+value.DEBUG_SHADOW_BUFFER.2=shadowtex0
+value.DEBUG_SHADOW_BUFFER.3=shadowtex1
 
 option.DEBUG_CASCADE_TINT=Tint Cascades
 option.DEBUG_CASCADE_TINT.comment=When enabled, shadow casters will show their cascade level by tint coloring. Applies to CSM only.

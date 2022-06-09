@@ -49,7 +49,7 @@
 		#endif
 
 		#ifdef SHADOW_EXCLUDE_FOLIAGE
-			if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10002.0) {
+			if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10004.0) {
 				gl_Position = vec4(10.0);
 
 				#if SHADOW_TYPE == 3
@@ -62,7 +62,7 @@
 		vec4 pos = gl_Vertex;
 
 		#ifdef ENABLE_WAVING
-			if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10002.0)
+			if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10004.0)
 				pos.xyz += GetWavingOffset();
 		#endif
 
@@ -70,7 +70,7 @@
 			vec3 blockPos = GetBlockPos();
 			int shadowTile = GetShadowTile(blockPos);
 			shadowTilePos = GetShadowTilePos(shadowTile);
-			mat4 matView = GetShadowTileViewMatrix(shadowTile);
+			mat4 matView = GetShadowTileViewMatrix();
 			mat4 matProj = GetShadowTileProjectionMatrix(shadowTile, shadowTilePos);
 
 			gl_Position = matProj * (matView * pos);

@@ -12,6 +12,8 @@
 	out vec2 lmcoord;
 	out vec2 texcoord;
 	out vec4 glcolor;
+	flat out vec3 vPos;
+	flat out vec3 vNormal;
 	flat out float geoNoL;
 
 	#if SHADOW_TYPE == 3
@@ -24,6 +26,7 @@
 		//flat out vec3 shadowTileColor;
 
 		#include "/lib/shadows/csm.glsl"
+		#include "/lib/shadows/csm_render.glsl"
 	#elif SHADOW_TYPE != 0
 		out vec3 shadowPos; //normals don't exist for particles
 
@@ -47,15 +50,19 @@
 #endif
 
 #ifdef RENDER_FRAG
+	uniform sampler2D texture;
 	uniform sampler2D lightmap;
 	uniform sampler2D shadowcolor0;
 	uniform sampler2D shadowtex0;
 	uniform sampler2D shadowtex1;
-	uniform sampler2D texture;
+	
+	uniform vec3 shadowLightPosition;
 
 	in vec2 lmcoord;
 	in vec2 texcoord;
 	in vec4 glcolor;
+	flat in vec3 vPos;
+	flat in vec3 vNormal;
 	flat in float geoNoL;
 
 	//fix artifacts when colored shadows are enabled
@@ -68,6 +75,7 @@
 		//flat in vec3 shadowTileColor;
 
 		#include "/lib/shadows/csm.glsl"
+		#include "/lib/shadows/csm_render.glsl"
 	#elif SHADOW_TYPE != 0
 		in vec3 shadowPos;
 

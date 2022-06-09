@@ -53,12 +53,14 @@ vec3 fbm(vec3 pos) {
 }
 
 vec3 GetWavingOffset() {
+    float range = (mc_Entity.x == 10002.0 || mc_Entity.x == 10004.0) ? 0.01 : 0.06;
+
 	vec3 worldPos = vaPosition.xyz + chunkOffset + cameraPosition;
-	vec3 hash = mod(fbm(worldPos) * 2.0 * PI + frameTimeCounter, 2.0 * PI);
-	vec3 offset = sin(hash) * 0.06;
+	vec3 hash = mod(fbm(worldPos) * 2.0 * PI + 1.2 * frameTimeCounter, 2.0 * PI);
+	vec3 offset = sin(hash) * range;
 
     // Prevent waving for blocks with the base attached to ground.
-    if (mc_Entity.x == 10002.0) {
+    if (mc_Entity.x >= 10003.0 && mc_Entity.x <= 10004.0) {
         float baseOffset = -at_midBlock.y / 64.0 + 0.5;
         offset *= clamp(baseOffset, 0.0, 1.0);
     }
