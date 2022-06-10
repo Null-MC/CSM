@@ -25,19 +25,21 @@
 
 	#include "/lib/waving.glsl"
 
-	#if SHADOW_TYPE == 3
-		uniform float near;
-		uniform float far;
+	#ifndef WORLD_END
+		#if SHADOW_TYPE == 3
+			uniform float near;
+			uniform float far;
 
-		out vec3 shadowPos[4];
-		flat out vec3 shadowTileColor;
+			out vec3 shadowPos[4];
+			flat out vec3 shadowTileColor;
 
-		#include "/lib/shadows/csm.glsl"
-		#include "/lib/shadows/csm_render.glsl"
-	#elif SHADOW_TYPE != 0
-		out vec3 shadowPos;
+			#include "/lib/shadows/csm.glsl"
+			#include "/lib/shadows/csm_render.glsl"
+		#elif SHADOW_TYPE != 0
+			out vec3 shadowPos;
 
-		#include "/lib/shadows/basic.glsl"
+			#include "/lib/shadows/basic.glsl"
+		#endif
 	#endif
 
 	#include "/lib/lighting/basic.glsl"
@@ -73,16 +75,18 @@
 	const bool shadowtex0Nearest = true;
 	const bool shadowtex1Nearest = true;
 
-	#if SHADOW_TYPE == 3
-		in vec3 shadowPos[4];
-		flat in vec3 shadowTileColor;
+	#ifndef WORLD_END
+		#if SHADOW_TYPE == 3
+			in vec3 shadowPos[4];
+			flat in vec3 shadowTileColor;
 
-		#include "/lib/shadows/csm.glsl"
-		#include "/lib/shadows/csm_render.glsl"
-	#elif SHADOW_TYPE != 0
-		in vec3 shadowPos;
+			#include "/lib/shadows/csm.glsl"
+			#include "/lib/shadows/csm_render.glsl"
+		#elif SHADOW_TYPE != 0
+			in vec3 shadowPos;
 
-		#include "/lib/shadows/basic.glsl"
+			#include "/lib/shadows/basic.glsl"
+		#endif
 	#endif
 
 	#include "/lib/lighting/basic.glsl"

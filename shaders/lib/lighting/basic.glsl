@@ -18,7 +18,7 @@
 			vNormal = normalize(gl_NormalMatrix * gl_Normal);
 		#endif
 
-		#if SHADOW_TYPE != 0 && !defined RENDER_SHADOW
+		#if SHADOW_TYPE != 0 && !defined RENDER_SHADOW && !defined WORLD_END
 			ApplyShadows(viewPos);
 		#endif
 
@@ -29,6 +29,7 @@
 #ifdef RENDER_FRAG
 	const float shininess = 16.0;
 
+	uniform float alphaTestRef;
 	uniform float screenBrightness;
 	uniform vec3 upPosition;
 
@@ -81,7 +82,10 @@
 		float fogF = clamp((length(fogPos) - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
 
 		vec3 fogCol = RGBToLinear(fogColor);
-		color = mix(color, vec4(fogCol, 1.0), fogF);
+		color.rgb = mix(color.rgb, fogCol, fogF);
+
+		if (color.a > alphaTestRef)
+			color.a = mix(color.a, 1.0, fogF);
 	}
 
 	vec4 BasicLighting() {
@@ -92,7 +96,7 @@
 		vec4 albedo = texColor;
 		albedo.rgb = RGBToLinear(albedo.rgb);
 
-		#if SHADOW_TYPE != 0
+		#if SHADOW_TYPE != 0 && !defined WORLD_END
 			vec3 upDir = normalize(upPosition);
 			vec3 lightDir = normalize(shadowLightPosition);
 			float shadowMul = max(dot(upDir, lightDir), 0.0) * SHADOW_BRIGHTNESS + 0.02;

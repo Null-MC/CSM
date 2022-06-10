@@ -33,6 +33,8 @@
 
 		#include "/lib/shadows/basic.glsl"
 	#endif
+	
+	#include "/lib/lighting/basic.glsl"
 
 
 	void main() {
@@ -40,14 +42,7 @@
 		lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 		glcolor = gl_Color;
 		
-		vec4 viewPos = gl_ModelViewMatrix * gl_Vertex;
-
-		#if SHADOW_TYPE != 0
-			ApplyShadows(viewPos);
-		#endif
-
-		//use consistent transforms for entities and hand so that armor glint doesn't have z-fighting issues.
-		gl_Position = gl_ProjectionMatrix * viewPos;
+		BasicVertex();
 	}
 #endif
 

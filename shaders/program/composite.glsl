@@ -4,11 +4,11 @@
 
 #include "/lib/common.glsl"
 
-uniform mat4 shadowModelView;
-uniform float near;
-uniform float far;
-
 #if SHADOW_TYPE == 3
+	uniform mat4 shadowModelView;
+	uniform float near;
+	uniform float far;
+
 	#include "/lib/shadows/csm.glsl"
 #endif
 
