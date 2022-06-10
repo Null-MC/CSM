@@ -22,6 +22,22 @@ vec3 GetShadowTileColor(const in int tile) {
 	return _shadowTileColors[tile];
 }
 
+#ifdef RENDER_VERTEX
+	// tile: 0-3
+	float GetCascadeDistance(int tile) {
+		#ifdef SHADOW_CSM_FITWORLD
+			if (tile == 2) {
+				return tile_dist[2] + max(far * SHADOW_CSM_FIT_FARSCALE - tile_dist[2], 0.0) * SHADOW_CSM_FITSCALE;
+			}
+			else if (tile == 3) {
+				return far * SHADOW_CSM_FIT_FARSCALE;
+			}
+		#endif
+
+		return tile_dist[tile];
+	}
+#endif
+
 #if defined RENDER_VERTEX && !defined RENDER_COMPOSITE
 	vec3 GetBlockPos() {
 		#ifndef SHADOW_EXCLUDE_ENTITIES
@@ -61,25 +77,13 @@ vec3 GetShadowTileColor(const in int tile) {
 			#endif
 		#endif
 
-		#ifdef SHADOW_CSM_FITWORLD
-			for (int i = 0; i < 2; i++) {
-				if (blockPos.x > -tile_dist[i] && blockPos.x < tile_dist[i]
-				 && blockPos.y > -tile_dist[i] && blockPos.y < tile_dist[i]) return i;
-			}
-
-			float size = tile_dist[2] + max(far * SHADOW_CSM_FIT_FARSCALE - tile_dist[2], 0.0) * SHADOW_CSM_FITSCALE;
+		for (int i = 0; i < 4; i++) {
+			float size = GetCascadeDistance(i);
 			if (blockPos.x > -size && blockPos.x < size
-			 && blockPos.y > -size && blockPos.y < size) return 2;
+			 && blockPos.y > -size && blockPos.y < size) return i;
+		}
 
-			return 3;
-		#else
-			for (int i = 0; i < 4; i++) {
-				if (blockPos.x > -tile_dist[i] && blockPos.x < tile_dist[i]
-				 && blockPos.y > -tile_dist[i] && blockPos.y < tile_dist[i]) return i;
-			}
-
-			return -1;
-		#endif
+		return -1;
 	}
 #endif
 

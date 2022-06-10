@@ -21,6 +21,7 @@ const float shadowDistanceRenderMul = 1.0;
 // Debug Options
 #define DEBUG_SHADOW_BUFFER 0 // [0 1 2 3]
 //#define DEBUG_CASCADE_TINT
+#define DEBUG_CSM_FRUSTUM
 
 // Internal Options
 #define SHADOW_CSM_FIT_FARSCALE 1.1

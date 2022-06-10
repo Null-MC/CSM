@@ -95,7 +95,7 @@
 	void main() {
 		vec4 color = BasicLighting();
 
-		#ifdef DEBUG_CASCADE_TINT
+		#if defined DEBUG_CASCADE_TINT && !defined WORLD_END
 			color.rgb *= 1.0 - LOD_TINT_FACTOR * (1.0 - shadowTileColor);
 		#endif
 

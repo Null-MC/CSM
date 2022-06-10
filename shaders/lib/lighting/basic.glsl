@@ -12,7 +12,7 @@
 		vPos = viewPos.xyz / viewPos.w;
 
 		#ifdef RENDER_TEXTURED
-			// extract billboard direction from view matrix?
+			// TODO: extract billboard direction from view matrix?
 			vNormal = normalize(gl_NormalMatrix * gl_Normal);
 		#else
 			vNormal = normalize(gl_NormalMatrix * gl_Normal);
