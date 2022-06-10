@@ -6,8 +6,6 @@
 	uniform mat4 shadowModelView;
 	uniform float near;
 	uniform float far;
-
-	#include "/lib/shadows/csm.glsl"
 #endif
 
 varying vec2 texcoord;
@@ -15,19 +13,18 @@ varying vec2 texcoord;
 #if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
 	varying vec3 shadowTileColors[4];
 	varying mat4 matShadowToScene[4];
+	varying vec2 clipMin[4];
+	varying vec2 clipMax[4];
 #endif
 
 #ifdef RENDER_VERTEX
-	#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
+	#if SHADOW_TYPE == 3
 		uniform mat4 gbufferModelView;
 		uniform mat4 gbufferProjection;
+		uniform mat4 shadowProjection;
+		
+		#include "/lib/shadows/csm.glsl"
 	#endif
-
-	mat4 GetRangedProjection(mat4 matProj, float zNear, float zFar) {
-		matProj[2][2] = -(zFar + zNear) / (zFar - zNear);
-		matProj[3][2] = -(2.0 * zFar * zNear) / (zFar - zNear);
-		return matProj;
-	}
 
 
 	void main() {
@@ -35,22 +32,51 @@ varying vec2 texcoord;
 		texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 
 		#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
-			mat4 matShadowWorldView = GetShadowTileViewMatrix();
+			//mat4 matShadowWorldView = GetShadowTileViewMatrix();
 
-			for (int i = 0; i < 4; i++) {
-				vec2 shadowTilePos = GetShadowTilePos(i);
-				shadowTileColors[i] = GetShadowTileColor(i);
+			for (int tile = 0; tile < 4; tile++) {
+				vec2 shadowTilePos = GetShadowTilePos(tile);
+				shadowTileColors[tile] = GetShadowTileColor(tile);
 
-				mat4 matShadowProjection = GetShadowTileProjectionMatrix(i, shadowTilePos);
+				float rangeNear = tile > 0 ? GetCascadeDistance(tile - 1) : near;
+				float rangeFar = GetCascadeDistance(tile);
+				mat4 matSceneProjectionRanged = gbufferProjection;
+				SetProjectionRange(matSceneProjectionRanged, rangeNear, rangeFar);
 
-				float rangeNear = i > 0 ? GetCascadeDistance(i - 1) : near;
-				float rangeFar = GetCascadeDistance(i);
+				//mat4 matShadowProjection = GetShadowTileProjectionMatrix(tile, shadowTilePos);
+				mat4 matShadowModelView, matShadowProjection;
+				GetShadowTileModelViewProjectionMatrix(tile, matShadowModelView, matShadowProjection);
 
-				// TODO: Alter/create custom matrix with sliced range
-				mat4 matSceneProjectionRanged = GetRangedProjection(gbufferProjection, rangeNear, rangeFar);
+				mat4 matShadowWorldViewProjectionInv = inverse(matShadowProjection * matShadowModelView);
+				matShadowToScene[tile] = matSceneProjectionRanged * gbufferModelView * matShadowWorldViewProjectionInv;
 
-				mat4 matShadowWorldViewProjectionInv = inverse(matShadowProjection * matShadowWorldView);
-				matShadowToScene[i] = matSceneProjectionRanged * gbufferModelView * matShadowWorldViewProjectionInv;
+				// TODO: project frustum points
+				mat4 matModelViewProjectionInv = inverse(matSceneProjectionRanged * gbufferModelView);
+				mat4 matSceneToShadow = matShadowProjection * matShadowModelView * matModelViewProjectionInv;
+
+				vec3 frustum[8] = vec3[](
+					vec3(-1.0, -1.0, -1.0),
+					vec3( 1.0, -1.0, -1.0),
+					vec3(-1.0,  1.0, -1.0),
+					vec3( 1.0,  1.0, -1.0),
+					vec3(-1.0, -1.0,  1.0),
+					vec3( 1.0, -1.0,  1.0),
+					vec3(-1.0,  1.0,  1.0),
+					vec3( 1.0,  1.0,  1.0));
+
+				for (int p = 0; p < 8; p++) {
+					vec4 shadowClipPos = matSceneToShadow * vec4(frustum[p], 1.0);
+					shadowClipPos.xyz /= shadowClipPos.w;
+
+					if (p == 0) {
+						clipMin[tile] = shadowClipPos.xy;
+						clipMax[tile] = shadowClipPos.xy;
+					}
+					else {
+						clipMin[tile] = min(clipMin[tile], shadowClipPos.xy);
+						clipMax[tile] = max(clipMax[tile], shadowClipPos.xy);
+					}
+				}
 			}
 		#endif
 	}
@@ -78,22 +104,10 @@ varying vec2 texcoord;
 
 		#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
 			int tile;
-			if (texcoord.y < 0.5) {
-				if (texcoord.x < 0.5) {
-					tile = 0;
-				}
-				else {
-					tile = 1;
-				}
-			}
-			else {
-				if (texcoord.x < 0.5) {
-					tile = 2;
-				}
-				else {
-					tile = 3;
-				}
-			}
+			if (texcoord.y < 0.5)
+				tile = texcoord.x < 0.5 ? 0 : 1;
+			else
+				tile = texcoord.x < 0.5 ? 2 : 3;
 
 			vec3 clipPos;
 			clipPos.xy = fract(texcoord * 2.0);
@@ -103,13 +117,20 @@ varying vec2 texcoord;
 			vec4 sceneClipPos = matShadowToScene[tile] * vec4(clipPos, 1.0);
 			sceneClipPos.xyz /= sceneClipPos.w;
 
-			bool contained = true;
-			if (sceneClipPos.x < -1.0 || sceneClipPos.x > 1.0) contained = false;
-			if (sceneClipPos.y < -1.0 || sceneClipPos.y > 1.0) contained = false;
-			if (sceneClipPos.z < -1.0 || sceneClipPos.z > 1.0) contained = false;
+			bool frustum_contained = true;
+			if (sceneClipPos.x < -1.0 || sceneClipPos.x > 1.0) frustum_contained = false;
+			if (sceneClipPos.y < -1.0 || sceneClipPos.y > 1.0) frustum_contained = false;
+			if (sceneClipPos.z < -1.0 || sceneClipPos.z > 1.0) frustum_contained = false;
 
-			if (contained && clipPos.z < 1.0) {
+			bool bounds_contained = true;
+			if (clipPos.x < clipMin[tile].x || clipPos.x > clipMax[tile].x) bounds_contained = false;
+			if (clipPos.y < clipMin[tile].y || clipPos.y > clipMax[tile].y) bounds_contained = false;
+
+			if (frustum_contained && clipPos.z < 1.0) {
 				color *= vec3(1.0, 0.2, 0.2);
+			}
+			else if (bounds_contained && clipPos.z < 1.0) {
+				color *= vec3(1.0, 1.0, 0.2);
 			}
 			else {
 				#ifdef DEBUG_CASCADE_TINT

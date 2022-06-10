@@ -24,23 +24,20 @@
 			vec4 posP = gbufferModelViewInverse * viewPos;
 			float shadowResScale = (1.0 / shadowMapResolution) * tile_dist_bias_factor;
 
-			mat4 matShadowView = GetShadowTileViewMatrix();
+			// mat4 matShadowWorldView = GetShadowTileViewMatrix();
 
-			for (int i = 0; i <= 3; i++) {
+			for (int i = 0; i < 4; i++) {
 				vec2 shadowTilePos = GetShadowTilePos(i);
-				mat4 matShadowProj = GetShadowTileProjectionMatrix(i, shadowTilePos);
+
+				// mat4 matShadowProjection = GetShadowTileProjectionMatrix(i, shadowTilePos);
+				mat4 matShadowWorldView, matShadowProjection;
+				GetShadowTileModelViewProjectionMatrix(i, matShadowWorldView, matShadowProjection);
 				
-				shadowPos[i] = (matShadowProj * (matShadowView * posP)).xyz; // convert to shadow screen space
+				shadowPos[i] = (matShadowProjection * (matShadowWorldView * posP)).xyz; // convert to shadow screen space
 				shadowPos[i].xyz = shadowPos[i].xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
 				shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowTilePos; // scale and translate to quadrant
 
-				float size = tile_dist[i];
-
-				#ifdef SHADOW_CSM_FITWORLD
-					if (i == 2) size += max(far * SHADOW_CSM_FIT_FARSCALE - size, 0.0) * SHADOW_CSM_FITSCALE;
-					if (i == 3) size = far * SHADOW_CSM_FIT_FARSCALE;
-				#endif
-
+				float size = GetCascadeDistance(i);
 				shadowPos[i].z -= size * shadowResScale / clamp(geoNoL, 0.02, 1.0); // apply shadow bias
 			}
 

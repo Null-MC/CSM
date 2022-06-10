@@ -2,6 +2,14 @@
 
 #include "/lib/common.glsl"
 
+varying vec2 lmcoord;
+varying vec2 texcoord;
+varying vec4 glcolor;
+
+#if SHADOW_TYPE == 3
+	flat varying vec2 shadowTilePos;
+#endif
+
 #ifdef RENDER_VERTEX
 	in vec4 mc_Entity;
 	in vec3 vaPosition;
@@ -12,10 +20,6 @@
 	uniform vec3 cameraPosition;
 	uniform vec3 chunkOffset;
 
-	out vec2 lmcoord;
-	out vec2 texcoord;
-	out vec4 glcolor;
-
 	#include "/lib/waving.glsl"
 
 	#if SHADOW_TYPE == 3
@@ -23,7 +27,8 @@
 		uniform float near;
 		uniform float far;
 
-		flat out vec2 shadowTilePos;
+		uniform mat4 gbufferModelView;
+		uniform mat4 gbufferProjection;
 
 		#include "/lib/shadows/csm.glsl"
 	#elif SHADOW_TYPE != 0
@@ -70,10 +75,12 @@
 			vec3 blockPos = GetBlockPos();
 			int shadowTile = GetShadowTile(blockPos);
 			shadowTilePos = GetShadowTilePos(shadowTile);
-			mat4 matView = GetShadowTileViewMatrix();
-			mat4 matProj = GetShadowTileProjectionMatrix(shadowTile, shadowTilePos);
+			//mat4 matShadowWorldView = GetShadowTileViewMatrix();
+			//mat4 matShadowProjection = GetShadowTileProjectionMatrix(shadowTile, shadowTilePos);
+			mat4 matShadowWorldView, matShadowProjection;
+			GetShadowTileModelViewProjectionMatrix(shadowTile, matShadowWorldView, matShadowProjection);
 
-			gl_Position = matProj * (matView * pos);
+			gl_Position = matShadowProjection * (matShadowWorldView * pos);
 
 			gl_Position.xy = gl_Position.xy * 0.5 + 0.5;
 			gl_Position.xy = gl_Position.xy * 0.5 + shadowTilePos;
@@ -95,14 +102,6 @@
 #ifdef RENDER_FRAG
 	uniform sampler2D lightmap;
 	uniform sampler2D texture;
-
-	in vec2 lmcoord;
-	in vec2 texcoord;
-	in vec4 glcolor;
-
-	#if SHADOW_TYPE == 3
-		flat in vec2 shadowTilePos;
-	#endif
 
 
 	void main() {
