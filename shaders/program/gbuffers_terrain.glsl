@@ -12,6 +12,7 @@ flat varying float geoNoL;
 #ifndef WORLD_END
 	#if SHADOW_TYPE == 3
 		varying vec3 shadowPos[4];
+		flat varying int shadowTile;
 		flat varying vec3 shadowTileColor;
 	#elif SHADOW_TYPE != 0
 		varying vec3 shadowPos;
@@ -76,10 +77,6 @@ flat varying float geoNoL;
 		const bool shadowtex0Nearest = true;
 		const bool shadowtex1Nearest = true;
 		
-		#if SHADOW_FILTER != 0
-			#include "/lib/shadows/filtering.glsl"
-		#endif
-
 		#if SHADOW_TYPE == 3
 			#include "/lib/shadows/csm.glsl"
 			#include "/lib/shadows/csm_render.glsl"

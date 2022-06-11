@@ -45,7 +45,6 @@
 					//shadowPos.z *= 0.5;
 					float shadowResScale = (1.0 / shadowMapResolution) * 0.05;
 					float bias = far * shadowResScale * SHADOW_BIAS_SCALE;
-					//float bias = 0.00002 * SHADOW_BIAS_SCALE;
 					shadowPos.z -= min(bias / abs(geoNoL), 0.1); //apply shadow bias
 				#endif
 
@@ -94,17 +93,35 @@
 	#elif SHADOW_FILTER == 1
 		// PCF
 		float GetShadowing() {
-			#if SHADOW_COLORS == 0
-				//for normal shadows, only consider the closest thing to the sun,
-				//regardless of whether or not it's opaque.
-				float depth = texture2D(shadowtex0, shadowPos.xy).r;
-			#else
-				//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
-				float depth = texture2D(shadowtex1, shadowPos.xy).r;
-			#endif
+			const int radius = 2;
+			float shadowPixelSize = (1.0 / shadowMapResolution);// * 0.5;
 
-			//return (depth < shadowPos.z) ? 0.0 : 1.0;
-			return step(shadowPos.z, depth);
+			float texDepth;
+			int sampleCount = 0;
+			float shadow = 0.0;
+			for (int y = -radius; y <= radius; y++) {
+				for (int x = -radius; x <= radius; x++) {
+					vec2 texcoord = shadowPos.xy + vec2(x, y) * shadowPixelSize;
+
+					#if SHADOW_COLORS == 0
+						//for normal shadows, only consider the closest thing to the sun,
+						//regardless of whether or not it's opaque.
+						texDepth = texture2D(shadowtex0, texcoord).r;
+					#else
+						//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
+						texDepth = texture2D(shadowtex1, texcoord).r;
+					#endif
+
+					//if (texDepth + EPSILON >= 1.0) continue;
+
+					//shadow += shadowPos.z > texDepth ? 1.0 : 0.0;
+					shadow += step(texDepth, shadowPos.z);
+					sampleCount++;
+				}
+			}
+
+			if (sampleCount < 1) return 1.0;
+			return 1.0 - min(shadow / sampleCount, 1.0);
 		}
 	#elif SHADOW_FILTER == 0
 		// Unfiltered

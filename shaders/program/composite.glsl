@@ -129,7 +129,7 @@ varying vec2 texcoord;
 			if (frustum_contained && clipPos.z < 1.0) {
 				color *= vec3(1.0, 0.2, 0.2);
 			}
-			else if (bounds_contained && clipPos.z < 1.0) {
+			else if (bounds_contained) {
 				color *= vec3(1.0, 1.0, 0.2);
 			}
 			else {
