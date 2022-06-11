@@ -2,20 +2,6 @@
 	const float tile_dist_bias_factor = 0.012288;
 
 	void ApplyShadows(const in vec4 viewPos) {
-		#ifdef RENDER_TEXTURED
-			geoNoL = 1.0;
-		#else
-			vec3 normal = normalize(gl_NormalMatrix * gl_Normal);
-			vec3 lightDir = normalize(shadowLightPosition);
-			geoNoL = dot(lightDir, normal);
-
-			#if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
-				//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
-				//in other words, don't darken the back side of it unless something else is casting a shadow on it.
-				if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10004.0) geoNoL = 1.0;
-			#endif
-		#endif
-
 		#ifndef RENDER_TEXTURED
 			shadowTileColor = vec3(1.0);
 		#endif
@@ -38,7 +24,8 @@
 				shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowTilePos; // scale and translate to quadrant
 
 				float size = GetCascadeDistance(i);
-				shadowPos[i].z -= size * shadowResScale / clamp(geoNoL, 0.02, 1.0); // apply shadow bias
+				float bias = size * shadowResScale * SHADOW_BIAS_SCALE;
+				shadowPos[i].z -= min(bias / geoNoL, 0.1); // apply shadow bias
 			}
 
 			#if defined DEBUG_CASCADE_TINT && !defined RENDER_TEXTURED
@@ -58,47 +45,80 @@
 #endif
 
 #ifdef RENDER_FRAG
-	float GetShadowing(out vec3 color) {
-		for (int i = 3; i >= 0; i--) {
-			vec2 shadowTilePos = GetShadowTilePos(i);
-			if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x > shadowTilePos.x + 0.5) continue;
-			if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y > shadowTilePos.y + 0.5) continue;
+	#if SHADOW_COLORS == 1
+		vec3 GetShadowColor() {
+			int tile = -1;
+			float depthLast = 1.0;
+			for (int i = 0; i < 4; i++) {
+				vec2 shadowTilePos = GetShadowTilePos(i);
+				if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x > shadowTilePos.x + 0.5) continue;
+				if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y > shadowTilePos.y + 0.5) continue;
 
-			#if SHADOW_COLORS == 0
-				//for normal shadows, only consider the closest thing to the sun,
-				//regardless of whether or not it's opaque.
-				float depth = texture2D(shadowtex0, shadowPos[i].xy).r;
-			#else
-				//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
-				float depth = texture2D(shadowtex1, shadowPos[i].xy).r;
-			#endif
-
-			if (depth < shadowPos[i].z) {
-				color = vec3(1.0);
-				return 0.0;
-			}
-		}
-
-		color = vec3(1.0);
-		#if SHADOW_COLORS == 1
-			int i = 3;
-			for (; i >= 0; i--) {
 				//when colored shadows are enabled and there's nothing OPAQUE between us and the sun,
 				//perform a 2nd check to see if there's anything translucent between us and the sun.
-				if (texture2D(shadowtex0, shadowPos[i].xy).r > shadowPos[i].z) break;
+				float depth = texture2D(shadowtex0, shadowPos[i].xy).r;
+				if (depth + EPSILON < 1.0 && depth < shadowPos[i].z && depth < depthLast) {
+					depthLast = depth;
+					tile = i;
+					//break;
+				}
 			}
 
-			if (i >= 0) {
-				//surface has translucent object between it and the sun. modify its color.
-				//if the block light is high, modify the color less.
-				vec4 shadowLightColor = texture2D(shadowcolor0, shadowPos[i].xy);
-				color = RGBToLinear(shadowLightColor.rgb);
+			if (tile < 0) return vec3(1.0);
 
-				//make colors more intense when the shadow light color is more opaque.
-				color = mix(vec3(1.0), color, shadowLightColor.a);
+			//surface has translucent object between it and the sun. modify its color.
+			//if the block light is high, modify the color less.
+			vec4 shadowLightColor = texture2D(shadowcolor0, shadowPos[tile].xy);
+			vec3 color = RGBToLinear(shadowLightColor.rgb);
+
+			//make colors more intense when the shadow light color is more opaque.
+			return mix(vec3(1.0), color, shadowLightColor.a);
+		}
+	#endif
+
+	#if SHADOW_FILTER == 2
+		// PCF + PCSS
+		float GetShadowing() {
+			// TODO
+		}
+	#elif SHADOW_FILTER == 1
+		// PCF
+		float GetShadowing() {
+			float factor = 1.0;
+
+			for (int i = 3; i >= 0; i--) {
+				vec2 shadowTilePos = GetShadowTilePos(i);
+				if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x > shadowTilePos.x + 0.5) continue;
+				if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y > shadowTilePos.y + 0.5) continue;
+
+				const int pcf_sizes[4] = int[](5, 3, 2, 1);
+				factor = min(factor, 1.0 - PCF(shadowPos[i].xy, shadowPos[i].z, pcf_sizes[i]));
+				if (factor < EPSILON) break;
 			}
-		#endif
 
-		return 1.0;
-	}
+			return max(factor, 0.0);
+		}
+	#elif SHADOW_FILTER == 0
+		// Unfiltered
+		float GetShadowing() {
+			for (int i = 3; i >= 0; i--) {
+				vec2 shadowTilePos = GetShadowTilePos(i);
+				if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x > shadowTilePos.x + 0.5) continue;
+				if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y > shadowTilePos.y + 0.5) continue;
+
+				#if SHADOW_COLORS == 0
+					//for normal shadows, only consider the closest thing to the sun,
+					//regardless of whether or not it's opaque.
+					float depth = texture2D(shadowtex0, shadowPos[i].xy).r;
+				#else
+					//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
+					float depth = texture2D(shadowtex1, shadowPos[i].xy).r;
+				#endif
+
+				if (depth < shadowPos[i].z) return 0.0;
+			}
+
+			return 1.0;
+		}
+	#endif
 #endif

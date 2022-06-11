@@ -3,7 +3,7 @@ option.SHADOW_TYPE.comment=The type of shadow mapping to use.
 value.SHADOW_TYPE.0=None
 value.SHADOW_TYPE.1=Basic
 value.SHADOW_TYPE.2=Distorted
-value.SHADOW_TYPE.3=CSM
+value.SHADOW_TYPE.3=Cascaded
 
 option.shadowMapResolution=Shadow Resolution
 option.shadowMapResolution.comment=Resolution of the shadow map. Higher numbers mean more accurate shadows.
@@ -11,6 +11,12 @@ option.shadowMapResolution.comment=Resolution of the shadow map. Higher numbers 
 
 screen.SHADOW_OPTIONS=Shadow Options
 screen.SHADOW_OPTIONS.comment=Options for shadows.
+
+option.SHADOW_FILTER=Filtering
+option.SHADOW_FILTER.comment=Type type of filtering to apply to shadow sampling.
+value.SHADOW_FILTER.0=None
+value.SHADOW_FILTER.1=PCF
+value.SHADOW_FILTER.2=PCF+PCSS
 
 option.SHADOW_EXCLUDE_ENTITIES=Hide Entities
 option.SHADOW_EXCLUDE_ENTITIES.comment=If true, entities will not cast shadows.
@@ -27,8 +33,33 @@ value.SHADOW_COLORS.2=Ignored
 option.SHADOW_BRIGHTNESS=Brightness
 option.SHADOW_BRIGHTNESS.comment=Light levels are multiplied by this number when the surface is in shadows.
 
-option.SHADOW_BIAS=Bias
-option.SHADOW_BIAS.comment=Increase this if you get shadow acne. Decrease this if you get peter panning. Does not apply to CSM.
+option.SHADOW_BIAS_SCALE=Bias Scale
+option.SHADOW_BIAS_SCALE.comment=Increase this if you get shadow acne. Decrease this if you get peter panning.
+value.SHADOW_BIAS_SCALE.0.5=10%
+value.SHADOW_BIAS_SCALE.0.5=20%
+value.SHADOW_BIAS_SCALE.0.5=30%
+value.SHADOW_BIAS_SCALE.0.5=40%
+value.SHADOW_BIAS_SCALE.0.5=50%
+value.SHADOW_BIAS_SCALE.0.6=60%
+value.SHADOW_BIAS_SCALE.0.7=70%
+value.SHADOW_BIAS_SCALE.0.8=80%
+value.SHADOW_BIAS_SCALE.0.9=90%
+value.SHADOW_BIAS_SCALE.1.0=100%
+value.SHADOW_BIAS_SCALE.1.1=110%
+value.SHADOW_BIAS_SCALE.1.2=120%
+value.SHADOW_BIAS_SCALE.1.3=130%
+value.SHADOW_BIAS_SCALE.1.4=140%
+value.SHADOW_BIAS_SCALE.1.5=150%
+value.SHADOW_BIAS_SCALE.1.6=160%
+value.SHADOW_BIAS_SCALE.1.7=170%
+value.SHADOW_BIAS_SCALE.1.8=180%
+value.SHADOW_BIAS_SCALE.1.9=190%
+value.SHADOW_BIAS_SCALE.2.0=200%
+value.SHADOW_BIAS_SCALE.2.1=210%
+value.SHADOW_BIAS_SCALE.2.2=220%
+value.SHADOW_BIAS_SCALE.2.3=230%
+value.SHADOW_BIAS_SCALE.2.4=240%
+value.SHADOW_BIAS_SCALE.2.5=250%
 
 option.SHADOW_DISTORT_FACTOR=Distortion
 option.SHADOW_DISTORT_FACTOR.comment=Distortion factor for the shadow map. Applies to distorted shadows only.

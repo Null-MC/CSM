@@ -1,5 +1,5 @@
 #define SHADOW_CSM_FITSCALE 0.1
-#define SHADOW_CSM_TIGHTEN
+//#define SHADOW_CSM_TIGHTEN
 
 const float tile_dist[4] = float[](5, 12, 30, 80);
 
@@ -103,21 +103,26 @@ vec3 GetShadowTileColor(const in int tile) {
 	}
 
 	// size: in world-space units
-	mat4 BuildOrthoProjectionMatrix(const in float width, const in float height) {
-		float n = -far;
-		float f = far * 2.0;
-
+	mat4 BuildOrthoProjectionMatrix(const in float width, const in float height, const in float zNear, const in float zFar) {
 		return mat4(
 		    vec4(2.0 / width, 0.0, 0.0, 0.0),
 		    vec4(0.0, 2.0 / height, 0.0, 0.0),
-		    vec4(0.0, 0.0, -2.0 / (f - n), 0.0),
-		    vec4(0.0, 0.0, -(f + n)/(f - n), 1.0));
+		    vec4(0.0, 0.0, -2.0 / (zFar - zNear), 0.0),
+		    vec4(0.0, 0.0, -(zFar + zNear)/(zFar - zNear), 1.0));
 	}
 
 	// tile: 0-3
 	mat4 GetShadowTileProjectionMatrix(const in int tile) {
+		float zNear = -far;
+		float zFar = far * 2.0;
+
+		// if (tile == 0) {
+		// 	zNear *= 0.5;
+		// 	zFar *= 0.5;
+		// }
+
 		float size = GetCascadeDistance(tile) * 2.0 + 3.0;
-		return BuildOrthoProjectionMatrix(size, size);
+		return BuildOrthoProjectionMatrix(size, size, zNear, zFar);
 	}
 
 	mat4 BuildTranslation(const in vec3 delta)
@@ -176,12 +181,12 @@ vec3 GetShadowTileColor(const in int tile) {
 			}
 
 			// TODO: offset view matrix to min/max center
-			//vec2 center = (clipMin + clipMax) * 0.5;
+			vec2 center = (clipMin + clipMax) * 0.5;
 			//matShadowModelView[0][3] = center.x;
 			//matShadowModelView[1][3] = center.y;
-			//mat4 translate = BuildTranslation(vec3(-center, 0.0) * 0.1);
+			mat4 translate = BuildTranslation(vec3(center.y * 0.02, 0.0, 0.0));
 			//matShadowModelView = translate * matShadowModelView;
-			//matShadowProjection = translate * matShadowProjection;
+			matShadowProjection = translate * matShadowProjection;
 
 			// update proj matrix min/max bounds
 			//float width = clipMax.x - clipMin.x;

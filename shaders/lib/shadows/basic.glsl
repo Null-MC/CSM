@@ -43,7 +43,10 @@
 					shadowPos.z -= SHADOW_BIAS * (distortFactor * distortFactor) / abs(geoNoL); //apply shadow bias
 				#else
 					//shadowPos.z *= 0.5;
-					shadowPos.z -= SHADOW_BIAS / abs(geoNoL); //apply shadow bias
+					float shadowResScale = (1.0 / shadowMapResolution) * 0.05;
+					float bias = far * shadowResScale * SHADOW_BIAS_SCALE;
+					//float bias = 0.00002 * SHADOW_BIAS_SCALE;
+					shadowPos.z -= min(bias / abs(geoNoL), 0.1); //apply shadow bias
 				#endif
 
 				shadowPos.xyz = shadowPos.xyz * 0.5 + 0.5; //convert from -1 ~ +1 to 0 ~ 1
@@ -57,42 +60,66 @@
 #endif
 
 #ifdef RENDER_FRAG
-	float GetShadowing(out vec3 color) {
-		// if (shadowPos.x < 0.0 || shadowPos.x > 1.0
-		//  || shadowPos.y < 0.0 || shadowPos.y > 1.0) {
-		// 	lm.y = mix(31.0 / 32.0 * SHADOW_BRIGHTNESS, 31.0 / 32.0, sqrt(geoNoL));
-		// }
-
-		//surface is facing towards shadowLightPosition
-		#if SHADOW_COLORS == 0
-			//for normal shadows, only consider the closest thing to the sun,
-			//regardless of whether or not it's opaque.
-			float depth = texture2D(shadowtex0, shadowPos.xy).r;
-		#else
-			//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
-			float depth = texture2D(shadowtex1, shadowPos.xy).r;
-		#endif
-
-		if (depth < shadowPos.z) {
-			color = vec3(1.0);
-			return 0.0;
-		}
-		
-		color = vec3(1.0);
-		#if SHADOW_COLORS == 1
+	#if SHADOW_COLORS == 1
+		vec3 GetShadowColor() {
 			//when colored shadows are enabled and there's nothing OPAQUE between us and the sun,
 			//perform a 2nd check to see if there's anything translucent between us and the sun.
-			if (texture2D(shadowtex0, shadowPos.xy).r < shadowPos.z) {
-				//surface has translucent object between it and the sun. modify its color.
-				//if the block light is high, modify the color less.
-				vec4 shadowLightColor = texture2D(shadowcolor0, shadowPos.xy);
-				color = RGBToLinear(shadowLightColor.rgb);
+			if (texture2D(shadowtex0, shadowPos.xy).r >= shadowPos.z) return vec3(1.0);
 
-				//make colors more intense when the shadow light color is more opaque.
-				color = mix(vec3(1.0), color, shadowLightColor.a);
-			}
-		#endif
+			//surface has translucent object between it and the sun. modify its color.
+			//if the block light is high, modify the color less.
+			vec4 shadowLightColor = texture2D(shadowcolor0, shadowPos.xy);
+			vec3 color = RGBToLinear(shadowLightColor.rgb);
 
-		return 1.0;
-	}
+			//make colors more intense when the shadow light color is more opaque.
+			return mix(vec3(1.0), color, shadowLightColor.a);
+		}
+	#endif
+
+	#if SHADOW_FILTER == 2
+		// PCF + PCSS
+		float GetShadowing() {
+			#if SHADOW_COLORS == 0
+				//for normal shadows, only consider the closest thing to the sun,
+				//regardless of whether or not it's opaque.
+				float depth = texture2D(shadowtex0, shadowPos.xy).r;
+			#else
+				//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
+				float depth = texture2D(shadowtex1, shadowPos.xy).r;
+			#endif
+
+			//return (depth < shadowPos.z) ? 0.0 : 1.0;
+			return step(shadowPos.z, depth);
+		}
+	#elif SHADOW_FILTER == 1
+		// PCF
+		float GetShadowing() {
+			#if SHADOW_COLORS == 0
+				//for normal shadows, only consider the closest thing to the sun,
+				//regardless of whether or not it's opaque.
+				float depth = texture2D(shadowtex0, shadowPos.xy).r;
+			#else
+				//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
+				float depth = texture2D(shadowtex1, shadowPos.xy).r;
+			#endif
+
+			//return (depth < shadowPos.z) ? 0.0 : 1.0;
+			return step(shadowPos.z, depth);
+		}
+	#elif SHADOW_FILTER == 0
+		// Unfiltered
+		float GetShadowing() {
+			#if SHADOW_COLORS == 0
+				//for normal shadows, only consider the closest thing to the sun,
+				//regardless of whether or not it's opaque.
+				float depth = texture2D(shadowtex0, shadowPos.xy).r;
+			#else
+				//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
+				float depth = texture2D(shadowtex1, shadowPos.xy).r;
+			#endif
+
+			//return (depth < shadowPos.z) ? 0.0 : 1.0;
+			return step(shadowPos.z, depth);
+		}
+	#endif
 #endif

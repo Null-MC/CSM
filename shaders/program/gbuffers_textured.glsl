@@ -25,13 +25,13 @@ flat varying float geoNoL;
 		uniform mat4 shadowModelView;
 		uniform mat4 shadowProjection;
 		uniform vec3 shadowLightPosition;
+		uniform float far;
 
 		#if SHADOW_TYPE == 3
 			attribute vec3 at_midBlock;
 
 			uniform mat4 gbufferProjection;
 			uniform float near;
-			uniform float far;
 
 			#include "/lib/shadows/csm.glsl"
 			#include "/lib/shadows/csm_render.glsl"
@@ -71,6 +71,10 @@ flat varying float geoNoL;
 		const bool shadowcolor0Nearest = true;
 		const bool shadowtex0Nearest = true;
 		const bool shadowtex1Nearest = true;
+		
+		#if SHADOW_FILTER != 0
+			#include "/lib/shadows/filtering.glsl"
+		#endif
 
 		#if SHADOW_TYPE == 3
 			#include "/lib/shadows/csm.glsl"
@@ -85,6 +89,10 @@ flat varying float geoNoL;
 
 	void main() {
 		vec4 color = BasicLighting();
+
+		ApplyFog(color);
+
+		color.rgb = LinearToRGB(color.rgb);
 
 		/* DRAWBUFFERS:0 */
 		gl_FragData[0] = color; //gcolor

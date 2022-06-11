@@ -18,6 +18,19 @@
 			vNormal = normalize(gl_NormalMatrix * gl_Normal);
 		#endif
 
+		#ifdef RENDER_TEXTURED
+			geoNoL = 1.0;
+		#else
+			vec3 lightDir = normalize(shadowLightPosition);
+			geoNoL = dot(lightDir, vNormal);
+
+			#if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
+				//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
+				//in other words, don't darken the back side of it unless something else is casting a shadow on it.
+				if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10004.0) geoNoL = 1.0;
+			#endif
+		#endif
+
 		#if SHADOW_TYPE != 0 && !defined RENDER_SHADOW && !defined WORLD_END
 			ApplyShadows(viewPos);
 		#endif
@@ -96,40 +109,56 @@
 		vec4 albedo = texColor;
 		albedo.rgb = RGBToLinear(albedo.rgb);
 
-		#if SHADOW_TYPE != 0 && !defined WORLD_END
-			vec3 upDir = normalize(upPosition);
-			vec3 lightDir = normalize(shadowLightPosition);
-			float shadowMul = max(dot(upDir, lightDir), 0.0) * SHADOW_BRIGHTNESS + 0.02;
+		float currentSky = lm.y;// * (32.0 / 31.0);
+		float dark = currentSky * SHADOW_BRIGHTNESS * (31.0 / 32.0) + (1.0 / 32.0);
 
-			if (geoNoL > 0.0) {
-				vec3 shadowColor;
-				float shadow = GetShadowing(shadowColor);
+		if (geoNoL >= EPSILON) {
+			#if SHADOW_TYPE != 0 && !defined WORLD_END
+				//vec3 upDir = normalize(upPosition);
+				//vec3 lightDir = normalize(shadowLightPosition);
+				//float shadowMul = max(dot(upDir, lightDir), 0.02) * SHADOW_BRIGHTNESS;
+				//shadowMul *= 31.0 / 32.0;
 
-				//also make colors less intense when the block light level is high.
-				shadowColor = mix(shadowColor, vec3(1.0), lm.x);
-				lightColor *= shadowColor;
+				float shadow = GetShadowing();
 
-				if (shadow > 0.5) {
-					//surface is in direct sunlight. increase light level.
-					#ifdef RENDER_TEXTURED
-						lm.y = 31.0 / 32.0;
-					#else
-						lm.y = mix(shadowMul, 1.0, sqrt(geoNoL)) * (31.0 / 32.0);
-					#endif
-				}
-				else {
-					lm.y = shadowMul;
-				}
-			}
-			else {
-				lm.y = shadowMul;
-			}
-		#endif
+				#if SHADOW_COLORS == 1
+					vec3 shadowColor = GetShadowColor();
 
-		vec4 final = ApplyLighting(albedo, lightColor, lm);
-		ApplyFog(final);
+					shadowColor = mix(vec3(1.0), shadowColor, shadow);
 
-		final.rgb = LinearToRGB(final.rgb);
-		return final;
+					//also make colors less intense when the block light level is high.
+					shadowColor = mix(shadowColor, vec3(1.0), lm.x);
+
+					lightColor *= shadowColor;
+				#endif
+
+				//surface is in direct sunlight. increase light level.
+				#ifdef RENDER_TEXTURED
+					//lm.y = 31.0 / 32.0;
+					float lightMax = 31.0 / 32.0;
+				#else
+					float lightMax = mix(dark, 31.0 / 32.0, sqrt(geoNoL));
+				#endif
+
+				lightMax = max(lightMax, lm.y);
+				lm.y = mix(dark, lightMax, shadow);
+
+				//lm.y = mix(lm.y, t, shadow);
+
+				// TODO: also darken skylight if in shadow?!
+				//lm.y = shadowMul;
+			#else
+				#ifdef RENDER_TEXTURED
+					lm.y = 31.0 / 32.0;
+				#else
+					lm.y = mix(dark, 31.0 / 32.0, sqrt(geoNoL));
+				#endif
+			#endif
+		}
+		else {
+			lm.y = dark;
+		}
+
+		return ApplyLighting(albedo, lightColor, lm);
 	}
 #endif
