@@ -23,12 +23,14 @@ vec3 GetShadowTileColor(const in int tile) {
 #ifdef RENDER_VERTEX
 	// tile: 0-3
 	float GetCascadeDistance(const in int tile) {
-		#ifdef SHADOW_CSM_FITWORLD
+		#ifdef SHADOW_CSM_FITRANGE
+			float maxDist = min(shadowDistance, far * SHADOW_CSM_FIT_FARSCALE);
+
 			if (tile == 2) {
-				return tile_dist[2] + max(far * SHADOW_CSM_FIT_FARSCALE - tile_dist[2], 0.0) * SHADOW_CSM_FITSCALE;
+				return tile_dist[2] + max(maxDist - tile_dist[2], 0.0) * SHADOW_CSM_FITSCALE;
 			}
 			else if (tile == 3) {
-				return far * SHADOW_CSM_FIT_FARSCALE;
+				return maxDist;
 			}
 		#endif
 
@@ -88,7 +90,7 @@ vec3 GetShadowTileColor(const in int tile) {
 	mat4 GetShadowTileProjectionMatrix(const in int tile) {
 		float tileSize = GetCascadeDistance(tile);
 		float cascadeSize = tileSize * 2.0 + 3.0;
-		mat4 matShadowProjection = BuildOrthoProjectionMatrix(cascadeSize, cascadeSize, -far, far * 2.0);
+		mat4 matShadowProjection = BuildOrthoProjectionMatrix(cascadeSize, cascadeSize, -far, far);
 
 		#ifdef SHADOW_CSM_TIGHTEN
 			#ifdef RENDER_SHADOW
@@ -203,7 +205,7 @@ vec3 GetShadowTileColor(const in int tile) {
 			#endif
 		#endif
 
-		#ifdef SHADOW_CSM_FITWORLD
+		#ifdef SHADOW_CSM_FITRANGE
 			const int max = 3;
 		#else
 			const int max = 4;
@@ -243,7 +245,7 @@ vec3 GetShadowTileColor(const in int tile) {
 			#endif
 		}
 
-		#ifdef SHADOW_CSM_FITWORLD
+		#ifdef SHADOW_CSM_FITRANGE
 			return 3;
 		#else
 			return -1;

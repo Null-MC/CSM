@@ -15,7 +15,12 @@
 				vec2 shadowTilePos = GetShadowTilePos(i);
 				mat4 matShadowProjection = GetShadowTileProjectionMatrix(i);
 				
-				shadowPos[i] = (matShadowProjection * (matShadowModelView * posP)).xyz; // convert to shadow screen space
+				#ifdef RENDER_TEXTURED
+					shadowPos[i] = (matShadowProjection * (matShadowModelView * posP)).xyz; // convert to shadow screen space
+				#else
+					shadowPos[i] = matShadowProjection * (matShadowModelView * posP); // convert to shadow screen space
+				#endif
+
 				shadowPos[i].xyz = shadowPos[i].xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
 				shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowTilePos; // scale and translate to quadrant
 
@@ -39,10 +44,17 @@
 		}
 		else { //vertex is facing away from the sun
 			// mark that this vertex does not need to check the shadow map.
-			shadowPos[0] = vec3(0.0);
-			shadowPos[1] = vec3(0.0);
-			shadowPos[2] = vec3(0.0);
-			shadowPos[3] = vec3(0.0);
+			#ifdef RENDER_TEXTURED
+				shadowPos[0] = vec3(0.0);
+				shadowPos[1] = vec3(0.0);
+				shadowPos[2] = vec3(0.0);
+				shadowPos[3] = vec3(0.0);
+			#else
+				shadowPos[0] = vec4(0.0);
+				shadowPos[1] = vec4(0.0);
+				shadowPos[2] = vec4(0.0);
+				shadowPos[3] = vec4(0.0);
+			#endif
 		}
 	}
 #endif
@@ -60,14 +72,12 @@
 			if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x > shadowTilePos.x + 0.5) continue;
 			if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y > shadowTilePos.y + 0.5) continue;
 
-			vec2 texcoord = shadowPos[i].xy;
 			float bias = 0.0;
 
 			#if SHADOW_FILTER != 0
 				if (abs(offset.x) > pcf_sizes[i] || abs(offset.y) > pcf_sizes[i]) continue;
 
 				float shadowPixelSize = (1.0 / shadowMapResolution);
-				texcoord += offset * shadowPixelSize;
 
 				bias = min(0.00002 * pcf_sizes[i] / geoNoL, 0.1);
 			#endif
@@ -75,10 +85,14 @@
 			#if SHADOW_COLORS == 0
 				//for normal shadows, only consider the closest thing to the sun,
 				//regardless of whether or not it's opaque.
-				float texDepth = texture2D(shadowtex0, texcoord).r;
+				#ifdef RENDER_TEXTURED
+					float texDepth = texture2D(shadowtex0, shadowPos[i].xy + offset * shadowPixelSize).r;
+				#else
+					float texDepth = texture2DProj(shadowtex0, vec4(shadowPos[i].xy + offset * shadowPixelSize * shadowPos[i].w, shadowPos[i].z, shadowPos[i].w)).r;
+				#endif
 			#else
 				//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
-				float texDepth = texture2D(shadowtex1, texcoord).r;
+				float texDepth = texture2D(shadowtex1, shadowPos[i].xy).r;
 			#endif
 
 			if (texDepth < shadowPos[i].z - bias && texDepth < depth) {

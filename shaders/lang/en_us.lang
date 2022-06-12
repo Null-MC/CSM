@@ -5,8 +5,18 @@ value.SHADOW_TYPE.1=Basic
 value.SHADOW_TYPE.2=Distorted
 value.SHADOW_TYPE.3=Cascaded
 
+option.LIGHTING_TYPE=Lighting Type
+option.LIGHTING_TYPE.comment=The type of shadow mapping to use.
+value.LIGHTING_TYPE.0=Basic
+value.LIGHTING_TYPE.1=Phong
+value.LIGHTING_TYPE.2=Blinn-Phong
+
+
 option.shadowMapResolution=Shadow Resolution
 option.shadowMapResolution.comment=Resolution of the shadow map. Higher numbers mean more accurate shadows.
+
+option.shadowDistance=Shadow Distance
+option.shadowDistance.comment=How far away shadows will be rendered.
 
 
 screen.SHADOW_OPTIONS=Shadow Options
@@ -64,8 +74,8 @@ value.SHADOW_BIAS_SCALE.2.5=250%
 option.SHADOW_DISTORT_FACTOR=Distortion
 option.SHADOW_DISTORT_FACTOR.comment=Distortion factor for the shadow map. Applies to distorted shadows only.
 
-option.SHADOW_CSM_FITWORLD=Fit CSM to World
-option.SHADOW_CSM_FITWORLD.comment=When enabled, the 3rd & 4th cascades for CSM will be stretched to cover the entire view distance.
+option.SHADOW_CSM_FITRANGE=Fit CSM to Shadow Range
+option.SHADOW_CSM_FITRANGE.comment=When enabled, all but the nearest cascade will be scaled to fit the shadow range.
 
 option.SHADOW_CSM_TIGHTEN=Fit CSM to Frustum
 option.SHADOW_CSM_TIGHTEN.comment=When enabled, the shadows cascades will be tightly fit to the view frustum to improve quality. Applies to CSM only. NOTE: disables entity shadows because Optifine bugs!

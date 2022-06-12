@@ -5,16 +5,16 @@
 varying vec2 lmcoord;
 varying vec2 texcoord;
 varying vec4 glcolor;
-flat varying vec3 vPos;
-flat varying vec3 vNormal;
-flat varying float geoNoL;
+varying vec3 vPos;
+varying vec3 vNormal;
+varying float geoNoL;
 
 #ifndef WORLD_END
 	#if SHADOW_TYPE == 3
-		varying vec3 shadowPos[4];
+		varying vec4 shadowPos[4];
 		flat varying vec3 shadowTileColor;
 	#elif SHADOW_TYPE != 0
-		varying vec3 shadowPos;
+		varying vec4 shadowPos;
 	#endif
 #endif
 
@@ -65,11 +65,6 @@ flat varying float geoNoL;
 		uniform sampler2D shadowtex1;
 		
 		uniform vec3 shadowLightPosition;
-
-		//fix artifacts when colored shadows are enabled
-		const bool shadowcolor0Nearest = true;
-		const bool shadowtex0Nearest = true;
-		const bool shadowtex1Nearest = true;
 		
 		#if SHADOW_TYPE == 3
 			#include "/lib/shadows/csm.glsl"

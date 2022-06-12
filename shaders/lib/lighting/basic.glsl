@@ -9,7 +9,7 @@
 
 		vec4 viewPos = gl_ModelViewMatrix * pos;
 
-		vPos = viewPos.xyz / viewPos.w;
+		vPos = viewPos.xyz;// / viewPos.w;
 
 		#ifdef RENDER_TEXTURED
 			// TODO: extract billboard direction from view matrix?
