@@ -111,7 +111,7 @@
 
 		float dark = lm.y * SHADOW_BRIGHTNESS * (31.0 / 32.0) + (1.0 / 32.0);
 
-		if (geoNoL >= EPSILON) {
+		if (geoNoL >= EPSILON && lm.y > 1.0/32.0) {
 			#if SHADOW_TYPE != 0 && !defined WORLD_END
 				float shadow = GetShadowing();
 

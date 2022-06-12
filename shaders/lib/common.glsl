@@ -50,7 +50,7 @@ const float shadowDistanceRenderMul = 1.0;
 	const float shadowDistance = 800; // [100 200 300 800]
 #else
 	// WARNING: This must match the value of the final cascade in "~/lib/shadow/csm.glsl" [+20] !
-	const float shadowDistance = 100;
+	//const float shadowDistance = 100;
 #endif
 
 #if SHADOW_TYPE == 3 && defined SHADOW_CSM_TIGHTEN && !defined SHADOW_EXCLUDE_ENTITIES

@@ -48,8 +48,8 @@
 #endif
 
 #ifdef RENDER_FRAG
-	const int pcf_sizes[4] = int[](5, 2, 1, 0);
-	const int pcf_max = 5;
+	const int pcf_sizes[4] = int[](4, 3, 2, 1);
+	const int pcf_max = 4;
 
 	float GetNearestDepth(const in ivec2 offset, out int tile) {
 		float depth = 1.0;
@@ -61,12 +61,15 @@
 			if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y > shadowTilePos.y + 0.5) continue;
 
 			vec2 texcoord = shadowPos[i].xy;
+			float bias = 0.0;
 
 			#if SHADOW_FILTER != 0
 				if (abs(offset.x) > pcf_sizes[i] || abs(offset.y) > pcf_sizes[i]) continue;
 
 				float shadowPixelSize = (1.0 / shadowMapResolution);
 				texcoord += offset * shadowPixelSize;
+
+				bias = min(0.00002 * pcf_sizes[i] / geoNoL, 0.1);
 			#endif
 
 			#if SHADOW_COLORS == 0
@@ -77,8 +80,6 @@
 				//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
 				float texDepth = texture2D(shadowtex1, texcoord).r;
 			#endif
-
-			float bias = 0.00002 * pcf_sizes[i];
 
 			if (texDepth < shadowPos[i].z - bias && texDepth < depth) {
 				depth = texDepth;
