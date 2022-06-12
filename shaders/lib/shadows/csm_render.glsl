@@ -78,7 +78,7 @@
 				float texDepth = texture2D(shadowtex1, texcoord).r;
 			#endif
 
-			float bias = 0.000008 * pcf_sizes[i];
+			float bias = 0.00002 * pcf_sizes[i];
 
 			if (texDepth < shadowPos[i].z - bias && texDepth < depth) {
 				depth = texDepth;
@@ -140,10 +140,10 @@
 
 			float shadow_final = 0.0;
 			for (int i = 0; i < 4; i++) {
-				int size2 = pcf_sizes[i] + 1;
-				size2 = size2 * size2 + (size2 - 1);// * size2;
+				float size = pcf_sizes[i];
+				size = (size + 1.0) * (size + 1.0) + 2.0 * size;// * size2;
 
-				shadow_final += shadow[i] / size2;// * 0.5;
+				shadow_final += shadow[i] / size;// * 0.5;
 			}
 
 			return max(1.0 - shadow_final, 0.0);

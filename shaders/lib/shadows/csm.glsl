@@ -161,7 +161,7 @@ vec3 GetShadowTileColor(const in int tile) {
 	vec3 GetBlockPos() {
 		#ifndef SHADOW_EXCLUDE_ENTITIES
 			#if defined RENDER_TERRAIN || defined RENDER_SHADOW
-				if (mc_Entity.x >= 0.0) return vec3(0.0);
+				if (mc_Entity.x == 0.0) return vec3(0.0);
 			#elif defined RENDER_ENTITIES
 				return vec3(0.0);
 			#endif
@@ -188,16 +188,16 @@ vec3 GetShadowTileColor(const in int tile) {
 		#ifndef SHADOW_EXCLUDE_ENTITIES
 			#if defined RENDER_SHADOW
 				if (entityId == CSM_PLAYER_ID) return 0;
-				if (mc_Entity.x >= 0.0) return SHADOW_ENTITY_CASCADE;
+				if (mc_Entity.x == 0.0) return SHADOW_ENTITY_CASCADE;
 			#elif defined RENDER_TERRAIN
-				if (mc_Entity.x >= 0.0) return SHADOW_ENTITY_CASCADE;
+				if (mc_Entity.x == 0.0) return SHADOW_ENTITY_CASCADE;
 			#elif defined RENDER_ENTITIES
 				if (entityId == CSM_PLAYER_ID) return 0;
 				return SHADOW_ENTITY_CASCADE;
 			#endif
 		#else
 			#if defined RENDER_SHADOW || defined RENDER_TERRAIN
-				if (mc_Entity.x >= 0.0) return -1;
+				if (mc_Entity.x == 0.0) return -1;
 			#elif defined RENDER_ENTITIES
 				return -1;
 			#endif
