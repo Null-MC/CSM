@@ -20,6 +20,7 @@ varying vec2 texcoord;
 #ifdef RENDER_VERTEX
 	#if SHADOW_TYPE == 3
 		uniform mat4 gbufferModelView;
+		uniform mat4 gbufferPreviousModelView;
 		uniform mat4 gbufferProjection;
 		uniform mat4 shadowProjection;
 		
@@ -32,7 +33,7 @@ varying vec2 texcoord;
 		texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 
 		#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
-			//mat4 matShadowWorldView = GetShadowTileViewMatrix();
+			mat4 matShadowModelView = GetShadowModelViewMatrix();
 
 			for (int tile = 0; tile < 4; tile++) {
 				vec2 shadowTilePos = GetShadowTilePos(tile);
@@ -43,14 +44,11 @@ varying vec2 texcoord;
 				mat4 matSceneProjectionRanged = gbufferProjection;
 				SetProjectionRange(matSceneProjectionRanged, rangeNear, rangeFar);
 
-				//mat4 matShadowProjection = GetShadowTileProjectionMatrix(tile, shadowTilePos);
-				mat4 matShadowModelView, matShadowProjection;
-				GetShadowTileModelViewProjectionMatrix(tile, matShadowModelView, matShadowProjection);
-
+				mat4 matShadowProjection = GetShadowTileProjectionMatrix(tile);
 				mat4 matShadowWorldViewProjectionInv = inverse(matShadowProjection * matShadowModelView);
 				matShadowToScene[tile] = matSceneProjectionRanged * gbufferModelView * matShadowWorldViewProjectionInv;
 
-				// TODO: project frustum points
+				// project frustum points
 				mat4 matModelViewProjectionInv = inverse(matSceneProjectionRanged * gbufferModelView);
 				mat4 matSceneToShadow = matShadowProjection * matShadowModelView * matModelViewProjectionInv;
 

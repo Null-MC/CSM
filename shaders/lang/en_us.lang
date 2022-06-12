@@ -35,10 +35,10 @@ option.SHADOW_BRIGHTNESS.comment=Light levels are multiplied by this number when
 
 option.SHADOW_BIAS_SCALE=Bias Scale
 option.SHADOW_BIAS_SCALE.comment=Increase this if you get shadow acne. Decrease this if you get peter panning.
-value.SHADOW_BIAS_SCALE.0.5=10%
-value.SHADOW_BIAS_SCALE.0.5=20%
-value.SHADOW_BIAS_SCALE.0.5=30%
-value.SHADOW_BIAS_SCALE.0.5=40%
+value.SHADOW_BIAS_SCALE.0.1=10%
+value.SHADOW_BIAS_SCALE.0.2=20%
+value.SHADOW_BIAS_SCALE.0.3=30%
+value.SHADOW_BIAS_SCALE.0.4=40%
 value.SHADOW_BIAS_SCALE.0.5=50%
 value.SHADOW_BIAS_SCALE.0.6=60%
 value.SHADOW_BIAS_SCALE.0.7=70%
@@ -64,15 +64,19 @@ value.SHADOW_BIAS_SCALE.2.5=250%
 option.SHADOW_DISTORT_FACTOR=Distortion
 option.SHADOW_DISTORT_FACTOR.comment=Distortion factor for the shadow map. Applies to distorted shadows only.
 
+option.SHADOW_CSM_FITWORLD=Fit CSM to World
+option.SHADOW_CSM_FITWORLD.comment=When enabled, the 3rd & 4th cascades for CSM will be stretched to cover the entire view distance.
+
+option.SHADOW_CSM_TIGHTEN=Fit CSM to Frustum
+option.SHADOW_CSM_TIGHTEN.comment=When enabled, the shadows cascades will be tightly fit to the view frustum to improve quality. Applies to CSM only. NOTE: disables entity shadows because Optifine bugs!
+
+
 option.SHADOW_ENTITY_CASCADE=Entity Cascade
 option.SHADOW_ENTITY_CASCADE.comment=The fixed cascade level for rendering entity shadows. Applies to CSM only.
 value.SHADOW_ENTITY_CASCADE.0=1
 value.SHADOW_ENTITY_CASCADE.1=2
 value.SHADOW_ENTITY_CASCADE.2=3
 value.SHADOW_ENTITY_CASCADE.3=4
-
-option.SHADOW_CSM_FITWORLD=Fit CSM to World
-option.SHADOW_CSM_FITWORLD.comment=When enabled, the 3rd & 4th cascades for CSM will be stretched to cover the entire view distance.
 
 screen.WORLD_OPTIONS=World Options
 screen.WORLD_OPTIONS.comment=Options for everything else.

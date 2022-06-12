@@ -22,15 +22,11 @@
 
 	#ifndef RENDER_SHADOW
 		void ApplyShadows(const in vec4 viewPos) {
-			vec3 normal = normalize(gl_NormalMatrix * gl_Normal);
-			vec3 lightDir = normalize(shadowLightPosition);
-			geoNoL = dot(lightDir, normal);
-
-			#if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
-				//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
-				//in other words, don't darken the back side of it unless something else is casting a shadow on it.
-				if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10004.0) geoNoL = 1.0;
-			#endif
+			// #if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
+			// 	//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
+			// 	//in other words, don't darken the back side of it unless something else is casting a shadow on it.
+			// 	if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10004.0) geoNoL = 1.0;
+			// #endif
 
 			if (geoNoL > 0.0) { //vertex is facing towards the sun
 				vec4 playerPos = gbufferModelViewInverse * viewPos;

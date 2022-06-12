@@ -12,7 +12,6 @@ flat varying float geoNoL;
 #ifndef WORLD_END
 	#if SHADOW_TYPE == 3
 		varying vec3 shadowPos[4]; //normals don't exist for particles
-		flat varying int shadowTile;
 	#elif SHADOW_TYPE != 0
 		varying vec3 shadowPos; //normals don't exist for particles
 	#endif
@@ -31,6 +30,7 @@ flat varying float geoNoL;
 		#if SHADOW_TYPE == 3
 			attribute vec3 at_midBlock;
 
+			uniform mat4 gbufferPreviousModelView;
 			uniform mat4 gbufferProjection;
 			uniform float near;
 
@@ -41,19 +41,15 @@ flat varying float geoNoL;
 		#endif
 	#endif
 
+	#include "/lib/lighting/basic.glsl"
+
 
 	void main() {
 		texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 		lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 		glcolor = gl_Color;
 
-		vec4 viewPos = gl_ModelViewMatrix * gl_Vertex;
-
-		#if SHADOW_TYPE != 0
-			ApplyShadows(viewPos);
-		#endif
-
-		gl_Position = gl_ProjectionMatrix * viewPos;
+		BasicVertex();
 	}
 #endif
 

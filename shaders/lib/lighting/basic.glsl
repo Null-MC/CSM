@@ -109,16 +109,10 @@
 		vec4 albedo = texColor;
 		albedo.rgb = RGBToLinear(albedo.rgb);
 
-		float currentSky = lm.y;// * (32.0 / 31.0);
-		float dark = currentSky * SHADOW_BRIGHTNESS * (31.0 / 32.0) + (1.0 / 32.0);
+		float dark = lm.y * SHADOW_BRIGHTNESS * (31.0 / 32.0) + (1.0 / 32.0);
 
 		if (geoNoL >= EPSILON) {
 			#if SHADOW_TYPE != 0 && !defined WORLD_END
-				//vec3 upDir = normalize(upPosition);
-				//vec3 lightDir = normalize(shadowLightPosition);
-				//float shadowMul = max(dot(upDir, lightDir), 0.02) * SHADOW_BRIGHTNESS;
-				//shadowMul *= 31.0 / 32.0;
-
 				float shadow = GetShadowing();
 
 				#if SHADOW_COLORS == 1
@@ -134,7 +128,6 @@
 
 				//surface is in direct sunlight. increase light level.
 				#ifdef RENDER_TEXTURED
-					//lm.y = 31.0 / 32.0;
 					float lightMax = 31.0 / 32.0;
 				#else
 					float lightMax = mix(dark, 31.0 / 32.0, sqrt(geoNoL));
@@ -142,11 +135,6 @@
 
 				lightMax = max(lightMax, lm.y);
 				lm.y = mix(dark, lightMax, shadow);
-
-				//lm.y = mix(lm.y, t, shadow);
-
-				// TODO: also darken skylight if in shadow?!
-				//lm.y = shadowMul;
 			#else
 				#ifdef RENDER_TEXTURED
 					lm.y = 31.0 / 32.0;

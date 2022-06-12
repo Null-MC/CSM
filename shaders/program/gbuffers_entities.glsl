@@ -12,7 +12,6 @@ flat varying float geoNoL;
 #ifndef WORLD_END
 	#if SHADOW_TYPE == 3
 		varying vec3 shadowPos[4];
-		flat varying int shadowTile;
 		flat varying vec3 shadowTileColor;
 	#elif SHADOW_TYPE != 0
 		varying vec3 shadowPos;
@@ -32,6 +31,7 @@ flat varying float geoNoL;
 		#if SHADOW_TYPE == 3
 			attribute vec3 at_midBlock;
 
+			uniform mat4 gbufferPreviousModelView;
 			uniform mat4 gbufferProjection;
 			uniform int entityId;
 			uniform float near;

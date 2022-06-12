@@ -27,8 +27,11 @@ varying vec4 glcolor;
 		uniform float near;
 		uniform float far;
 
-		uniform mat4 gbufferModelView;
-		uniform mat4 gbufferProjection;
+		// uniform mat4 gbufferModelView;
+		// uniform mat4 gbufferProjection;
+		// NOTE: We are using the previous gbuffer matrices cause the current ones don't work in shadow pass
+		uniform mat4 gbufferPreviousModelView;
+		uniform mat4 gbufferPreviousProjection;
 
 		#include "/lib/shadows/csm.glsl"
 	#elif SHADOW_TYPE != 0
@@ -74,13 +77,10 @@ varying vec4 glcolor;
 		#if SHADOW_TYPE == 3
 			vec3 blockPos = GetBlockPos();
 			int shadowTile = GetShadowTile(blockPos);
+			mat4 matShadowProjection = GetShadowTileProjectionMatrix(shadowTile);
 			shadowTilePos = GetShadowTilePos(shadowTile);
-			//mat4 matShadowWorldView = GetShadowTileViewMatrix();
-			//mat4 matShadowProjection = GetShadowTileProjectionMatrix(shadowTile, shadowTilePos);
-			mat4 matShadowWorldView, matShadowProjection;
-			GetShadowTileModelViewProjectionMatrix(shadowTile, matShadowWorldView, matShadowProjection);
 
-			gl_Position = matShadowProjection * (matShadowWorldView * pos);
+			gl_Position = matShadowProjection * (gl_ModelViewMatrix * pos);
 
 			gl_Position.xy = gl_Position.xy * 0.5 + 0.5;
 			gl_Position.xy = gl_Position.xy * 0.5 + shadowTilePos;
