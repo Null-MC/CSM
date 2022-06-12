@@ -141,7 +141,7 @@ vec3 distort(vec3 v) {
 	#if SHADOW_FILTER == 2
 		// PCF + PCSS
 		#define PCSS_NEAR 1.0
-		#define SHADOW_BLOCKER_SAMPLES 36
+		//#define SHADOW_BLOCKER_SAMPLES 36
 		#define SHADOW_LIGHT_SIZE 0.0002
 
 		float FindBlockerDistance(float searchWidth) {
@@ -150,7 +150,7 @@ vec3 distort(vec3 v) {
 			float avgBlockerDistance = 0;
 			int blockers = 0;
 
-			for (int i = 0; i < SHADOW_BLOCKER_SAMPLES; i++) {
+			for (int i = 0; i < POISSON_SAMPLES; i++) {
 				vec2 offset = (poissonDisk[i] / 6.0) * searchWidth * shadowPixelSize;
 				float texDepth = SampleDepth(offset);
 
