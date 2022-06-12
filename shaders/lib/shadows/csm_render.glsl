@@ -63,39 +63,68 @@
 	const int pcf_sizes[4] = int[](4, 3, 2, 1);
 	const int pcf_max = 4;
 
-	float GetNearestDepth(const in ivec2 offset, out int tile) {
+	float SampleDepth(const in int tile, const in vec2 offset) {
+		#if SHADOW_COLORS == 0
+			//for normal shadows, only consider the closest thing to the sun,
+			//regardless of whether or not it's opaque.
+			#ifdef RENDER_TEXTURED
+				return texture2D(shadowtex0, shadowPos[tile].xy + offset).r;
+			#else
+				return texture2DProj(shadowtex0, vec4(shadowPos[tile].xy + offset * shadowPos[tile].w, shadowPos[tile].z, shadowPos[tile].w)).r;
+			#endif
+		#else
+			//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
+			#ifdef RENDER_TEXTURED
+				return texture2D(shadowtex1, shadowPos[tile].xy + offset).r;
+			#else
+				return texture2DProj(shadowtex1, vec4(shadowPos[tile].xy + offset * shadowPos[tile].w, shadowPos[tile].z, shadowPos[tile].w)).r;
+			#endif
+		#endif
+	}
+
+	// float GetNearestDepth(const in ivec2 offset, out int tile) {
+	// 	float depth = 1.0;
+	// 	tile = -1;
+
+	// 	for (int i = 0; i < 4; i++) {
+	// 		vec2 shadowTilePos = GetShadowTilePos(i);
+	// 		if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x > shadowTilePos.x + 0.5) continue;
+	// 		if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y > shadowTilePos.y + 0.5) continue;
+
+	// 		float bias = 0.0;
+
+	// 		#if SHADOW_FILTER != 0
+	// 			if (abs(offset.x) > pcf_sizes[i] || abs(offset.y) > pcf_sizes[i]) continue;
+
+	// 			float shadowPixelSize = (1.0 / shadowMapResolution);
+
+	// 			bias = min(0.00002 * pcf_sizes[i] / geoNoL, 0.1);
+	// 		#endif
+
+	// 		float texDepth = SampleDepth(i, offset * shadowPixelSize);
+
+	// 		if (texDepth < shadowPos[i].z - bias && texDepth < depth) {
+	// 			depth = texDepth;
+	// 			tile = i;
+	// 		}
+	// 	}
+
+	// 	return depth;
+	// }
+
+	float GetNearestDepth(const in vec2 offset, out int tile) {
 		float depth = 1.0;
 		tile = -1;
 
 		for (int i = 0; i < 4; i++) {
+			// Ignore if outside tile bounds
 			vec2 shadowTilePos = GetShadowTilePos(i);
-			if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x > shadowTilePos.x + 0.5) continue;
-			if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y > shadowTilePos.y + 0.5) continue;
+			if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x >= shadowTilePos.x + 0.5) continue;
+			if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y >= shadowTilePos.y + 0.5) continue;
 
-			float bias = 0.0;
+			float texDepth = SampleDepth(i, offset);
 
-			#if SHADOW_FILTER != 0
-				if (abs(offset.x) > pcf_sizes[i] || abs(offset.y) > pcf_sizes[i]) continue;
-
-				float shadowPixelSize = (1.0 / shadowMapResolution);
-
-				bias = min(0.00002 * pcf_sizes[i] / geoNoL, 0.1);
-			#endif
-
-			#if SHADOW_COLORS == 0
-				//for normal shadows, only consider the closest thing to the sun,
-				//regardless of whether or not it's opaque.
-				#ifdef RENDER_TEXTURED
-					float texDepth = texture2D(shadowtex0, shadowPos[i].xy + offset * shadowPixelSize).r;
-				#else
-					float texDepth = texture2DProj(shadowtex0, vec4(shadowPos[i].xy + offset * shadowPixelSize * shadowPos[i].w, shadowPos[i].z, shadowPos[i].w)).r;
-				#endif
-			#else
-				//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
-				float texDepth = texture2D(shadowtex1, shadowPos[i].xy).r;
-			#endif
-
-			if (texDepth < shadowPos[i].z - bias && texDepth < depth) {
+			if (texDepth < shadowPos[i].z && texDepth < depth) {
 				depth = texDepth;
 				tile = i;
 			}
@@ -134,34 +163,93 @@
 		}
 	#endif
 
+	#if SHADOW_FILTER != 0
+		// float GetShadowing_PCF(const in int radius) {
+		// 	float texDepth;
+		// 	float shadow[4] = float[](0.0, 0.0, 0.0, 0.0);
+		// 	for (int y = -radius; y <= radius; y++) {
+		// 		for (int x = -radius; x <= radius; x++) {
+		// 			int tile;
+		// 			ivec2 offset = ivec2(x, y);
+		// 			float texDepth = GetNearestDepth(offset, tile);
+		// 			shadow[tile] += step(texDepth + EPSILON, 1.0);
+		// 		}
+		// 	}
+
+		// 	float shadow_final = 0.0;
+		// 	for (int i = 0; i < 4; i++) {
+		// 		float size = pcf_sizes[i];
+		// 		size = (size + 1.0) * (size + 1.0) + 2.0 * size;// * size2;
+
+		// 		shadow_final += shadow[i] / size;// * 0.5;
+		// 	}
+
+		// 	return min(shadow_final, 1.0);
+		// }
+
+		float GetShadowing_PCF(float radius) {
+			int tile;
+			float texDepth;
+			float shadow = 0.0;
+			for (int i = 0; i < POISSON_SAMPLES; i++) {
+				vec2 offset = (poissonDisk[i] / 6.0) * radius;
+				float texDepth = GetNearestDepth(offset * shadowPixelSize, tile);
+
+				//if (texDepth + EPSILON >= 1.0) continue;
+
+				//shadow += shadowPos.z > texDepth ? 1.0 : 0.0;
+				shadow += step(texDepth + EPSILON, shadowPos[tile].z);
+			}
+
+			return shadow / POISSON_SAMPLES;
+		}
+	#endif
+
 	#if SHADOW_FILTER == 2
 		// PCF + PCSS
+		#define SHADOW_BLOCKER_SAMPLES 16
+
+		float FindBlockerDistance(float searchWidth) {
+			//float searchWidth = SearchWidth(uvLightSize, shadowPos.z);
+			//float searchWidth = 6.0; //SHADOW_LIGHT_SIZE * (shadowPos.z - PCSS_NEAR) / shadowPos.z;
+			float avgBlockerDistance = 0;
+			int blockers = 0;
+
+			int tile;
+			for (int i = 0; i < SHADOW_BLOCKER_SAMPLES; i++) {
+				vec2 offset = (poissonDisk[i] / 6.0) * searchWidth;
+				float texDepth = GetNearestDepth(offset * shadowPixelSize, tile);
+
+				if (texDepth < shadowPos[tile].z) { // - directionalLightShadowMapBias
+					avgBlockerDistance += texDepth;
+					blockers++;
+				}
+			}
+
+			return blockers > 0 ? avgBlockerDistance / blockers : -1.0;
+		}
+
 		float GetShadowing() {
-			// TODO
+			// blocker search
+			float blockerDistance = FindBlockerDistance(16.0);
+			if (blockerDistance < 0.0) return 1.0;
+
+			//return 0.0;
+
+			// penumbra estimation
+			// WARNING: IDK WTF to do about the tile index here! so it's 0
+			float penumbraWidth = (shadowPos[0].z - blockerDistance) / blockerDistance;
+
+			//return clamp(1.0 - penumbraWidth, 0.0, 1.0);
+
+			// percentage-close filtering
+			float uvRadius = clamp(penumbraWidth * 200.0, 0.0, 32.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+			return 1.0 - GetShadowing_PCF(uvRadius);
 		}
 	#elif SHADOW_FILTER == 1
 		// PCF
 		float GetShadowing() {
-			float texDepth;
-			float shadow[4] = float[](0.0, 0.0, 0.0, 0.0);
-			for (int y = -pcf_max; y <= pcf_max; y++) {
-				for (int x = -pcf_max; x <= pcf_max; x++) {
-					int tile;
-					ivec2 offset = ivec2(x, y);
-					float texDepth = GetNearestDepth(offset, tile);
-					shadow[tile] += step(texDepth + EPSILON, 1.0);
-				}
-			}
-
-			float shadow_final = 0.0;
-			for (int i = 0; i < 4; i++) {
-				float size = pcf_sizes[i];
-				size = (size + 1.0) * (size + 1.0) + 2.0 * size;// * size2;
-
-				shadow_final += shadow[i] / size;// * 0.5;
-			}
-
-			return max(1.0 - shadow_final, 0.0);
+			return 1.0 - GetShadowing_PCF(6.0);
 		}
 	#elif SHADOW_FILTER == 0
 		// Unfiltered

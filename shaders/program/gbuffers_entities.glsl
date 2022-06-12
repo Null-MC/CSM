@@ -66,6 +66,8 @@ varying float geoNoL;
 
 		uniform vec3 shadowLightPosition;
 
+		#include "/lib/shadows/poisson_36.glsl"
+
 		#if SHADOW_TYPE == 3
 			#include "/lib/shadows/csm.glsl"
 			#include "/lib/shadows/csm_render.glsl"

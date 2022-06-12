@@ -65,6 +65,8 @@ varying float geoNoL;
 		uniform sampler2D shadowtex1;
 		
 		uniform vec3 shadowLightPosition;
+
+		#include "/lib/shadows/poisson_36.glsl"
 		
 		#if SHADOW_TYPE == 3
 			#include "/lib/shadows/csm.glsl"

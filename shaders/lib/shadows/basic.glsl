@@ -1,25 +1,23 @@
+//euclidian distance is defined as sqrt(a^2 + b^2 + ...)
+//this length function instead does cbrt(a^3 + b^3 + ...)
+//this results in smaller distances along the diagonal axes.
+float cubeLength(vec2 v) {
+	return pow(abs(v.x * v.x * v.x) + abs(v.y * v.y * v.y), 1.0 / 3.0);
+}
+
+float getDistortFactor(vec2 v) {
+	return cubeLength(v) + SHADOW_DISTORT_FACTOR;
+}
+
+vec3 distort(vec3 v, float factor) {
+	return vec3(v.xy / factor, v.z * 0.5);
+}
+
+vec3 distort(vec3 v) {
+	return distort(v, getDistortFactor(v.xy));
+}
+
 #ifdef RENDER_VERTEX
-	#if SHADOW_TYPE == 2
-		//euclidian distance is defined as sqrt(a^2 + b^2 + ...)
-		//this length function instead does cbrt(a^3 + b^3 + ...)
-		//this results in smaller distances along the diagonal axes.
-		float cubeLength(vec2 v) {
-			return pow(abs(v.x * v.x * v.x) + abs(v.y * v.y * v.y), 1.0 / 3.0);
-		}
-
-		float getDistortFactor(vec2 v) {
-			return cubeLength(v) + SHADOW_DISTORT_FACTOR;
-		}
-
-		vec3 distort(vec3 v, float factor) {
-			return vec3(v.xy / factor, v.z * 0.5);
-		}
-
-		vec3 distort(vec3 v) {
-			return distort(v, getDistortFactor(v.xy));
-		}
-	#endif
-
 	#ifndef RENDER_SHADOW
 		void ApplyShadows(const in vec4 viewPos) {
 			// #if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
@@ -122,47 +120,7 @@
 		// 	return sampleCount < 1 ? 0.0 : min(shadow / sampleCount, 1.0);
 		// }
 
-		#define POISSON_SAMPLES 36
-		const vec2 poissonDisk[POISSON_SAMPLES] = vec2[](
-			vec2(-1.666556, 3.323026),
-			vec2( 0.2221941, 3.160916),
-			vec2(-1.893797, 4.687831),
-			vec2(-1.276664, 0.9222447),
-			vec2(-3.629881, 3.348944),
-			vec2(-2.712132, 1.906398),
-			vec2(-2.671917, 0.2927003),
-			vec2(-4.545432, 0.1704162),
-			vec2(-4.042074, 1.560578),
-			vec2(-0.4609011, -0.1767054),
-			vec2(-0.3247355, 1.863549),
-			vec2(-2.593971, -2.044478),
-			vec2(-4.095399, -1.293885),
-			vec2(-1.238809, -1.770761),
-			vec2( 1.796596, 1.167886),
-			vec2( 0.773102, -1.077155),
-			vec2(-1.453834, -3.095817),
-			vec2(-3.803265, -3.197731),
-			vec2( 3.11283, -0.6977059),
-			vec2( 3.845328, 1.689705),
-			vec2( 2.372247, 2.7577),
-			vec2( 0.1328599, -3.005355),
-			vec2(-0.3344785, -5.29612),
-			vec2(-0.06073825, 5.078752),
-			vec2(-2.309451, -4.194909),
-			vec2( 5.097953,  1.165748),
-			vec2( 4.321077,  0.0005562016),
-			vec2( 4.549654,  3.009906),
-			vec2(-5.40501,  -0.9731998),
-			vec2( 2.150302,  4.912695),
-			vec2( 5.221128, -1.13326),
-			vec2( 1.481966, -2.525289),
-			vec2( 3.236365, -2.852343),
-			vec2( 1.118359, -4.146132),
-			vec2( 2.667908, -4.248179),
-			vec2( 4.654964, -2.35809));
-
 		float GetShadowing_PCF(float radius) {
-
 			float texDepth;
 			float shadow = 0.0;
 			for (int i = 0; i < POISSON_SAMPLES; i++) {
@@ -183,7 +141,7 @@
 	#if SHADOW_FILTER == 2
 		// PCF + PCSS
 		#define PCSS_NEAR 1.0
-		#define SHADOW_BLOCKER_SAMPLES 16
+		#define SHADOW_BLOCKER_SAMPLES 36
 		#define SHADOW_LIGHT_SIZE 0.0002
 
 		float FindBlockerDistance(float searchWidth) {
@@ -193,7 +151,8 @@
 			int blockers = 0;
 
 			for (int i = 0; i < SHADOW_BLOCKER_SAMPLES; i++) {
-				float texDepth = SampleDepth(poissonDisk[i] * searchWidth);
+				vec2 offset = (poissonDisk[i] / 6.0) * searchWidth * shadowPixelSize;
+				float texDepth = SampleDepth(offset);
 
 				if (texDepth < shadowPos.z) { // - directionalLightShadowMapBias
 					avgBlockerDistance += texDepth;
@@ -205,8 +164,11 @@
 		}
 
 		float GetShadowing() {
+			float distortFactor = getDistortFactor(shadowPos.xy);
+			distortFactor = 1.0 - distortFactor*distortFactor;
+
 			// blocker search
-			float blockerDistance = FindBlockerDistance(0.0004);
+			float blockerDistance = FindBlockerDistance(12.0 * distortFactor);
 			if (blockerDistance < 0.0) return 1.0;
 
 			//return 0.0;
@@ -217,13 +179,17 @@
 			//return clamp(1.0 - penumbraWidth, 0.0, 1.0);
 
 			// percentage-close filtering
-			float uvRadius = clamp(penumbraWidth * 200.0, 0.0, 32.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
-			return 1.0 - GetShadowing_PCF(uvRadius);
+			float uvRadius = clamp(penumbraWidth * 320.0, 0.0, 24.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+			float shadow = GetShadowing_PCF(uvRadius * distortFactor);
+			return 1.0 - shadow*shadow;
 		}
 	#elif SHADOW_FILTER == 1
 		// PCF
 		float GetShadowing() {
-			return 1.0 - GetShadowing_PCF(16.0);
+			float distortFactor = getDistortFactor(shadowPos.xy);
+			distortFactor = 1.0 - distortFactor*distortFactor;
+			float shadow = GetShadowing_PCF(8.0 * distortFactor);
+			return 1.0 - shadow*shadow;
 		}
 	#elif SHADOW_FILTER == 0
 		// Unfiltered
