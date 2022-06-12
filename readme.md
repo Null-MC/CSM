@@ -1,25 +1,39 @@
 # Minecraft CSM Sample
-A very minimal proof-of-concept/template for using Cascaded Shadow Mapping in Minecraft. Since there is no access to the CPU side for splitting the frustum, culling, and shadow buffers - this technique instead uses a single shadow buffer split into 4 quadrants. Each equally sized quadrant is used as a cascade, meaning this approach uses a fixed count of 4 cascades. Since this is all handled in a single pass, geometry is shifted into each quadrant based on distance. Because there is no overlap between cascades, it is required to sample all cascades to find occlusions.
 
-Currently this requires Optifine, as vanilla Fabulous shaders do not provide a shadow pass, and Iris does not support the required `at_midBlock` attribute.
+> ⛔ **This is still an early work-in-progress!** While your encouraged to check it out, please do not try to adopt any of the work here in your own projects until it is ready. Once it is, this message will be replaced and GitHub Releases will be available.
+
+A very minimal proof-of-concept/template for using Cascaded Shadow Mapping in Minecraft. This is meant to serve as a learning resource or template for other works, not as a final product itself. 
 
 
-# Shadow Types
-#### None
-No shadows at all.
+## Shadow Types
+- **None**  
+  No shadows at all. Just a visual/performance benchmark comparison.
 
-#### Basic
-Uses the Optifine defaults for shadow mapping, with no additional improvements.
+- **Basic**  
+  Uses the Optifine defaults for shadow mapping, with no additional improvements. It's expected to look _really_ bad...
 
-#### Distorted
-Uses the Optifine defaults for shadow mapping, but also applies distortion to the projection to improve detail of nearby shadows.
+- **Distorted**  
+  Uses the Optifine defaults for shadow mapping, but also applies distortion to the projection to improve detail of nearby shadows. This significantly improves quality, but also causes visible displacement of long shadows.
 
-#### CSM
-Splits the shadow map into 4 cascades with varying levels of detail.
+- **Cascading**  
+  Splits the shadow map into 4 cascades with varying levels of detail. This greatly improves shadow quality in the same way as distorted shadow maps, but does not cause any visual distortion since it is completely orthographic. This does however introduce artifacts when objects transition between different cascade levels.
+
+
+## Filter Types
+- **None**  
+  No filtering of shadow map, just a simple binary result.
+
+- **PCF**  
+  Uses a fixed-size kernel to perform percent-closer-filtering of the shadowmap. This provides a fixed softening factor for shadows, but also introduces visual artifects as sample occlusion will increase with light angle.
+
+- **PCF + PCSS**  
+  Extends PCF filtering with percent-closer-soft-shadows. This technique uses an additional pre-blocker-check to adjust the radius of the PCF filtering, removing the artifacts caused by PCF alone.
 
 
 # Implementation Details
-Coming Soon
+Since there is no access to the CPU side for splitting the frustum, culling, and shadow buffers - this technique instead uses a single shadow buffer split into 4 quadrants. Each equally sized quadrant is used as a cascade, meaning this approach uses a fixed count of 4 cascades. Since this is all handled in a single pass, geometry is shifted into each quadrant based on distance. Because there is no overlap between cascades, it is required to sample all cascades to find occlusions.
+
+:warning: Currently this requires Optifine since Iris does not yet support the required `at_midBlock` attribute. This notice will be updated as soon as the Iris team finishes adding support.
 
 
 ### Special thanks to:
