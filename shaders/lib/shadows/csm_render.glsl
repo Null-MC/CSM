@@ -65,7 +65,7 @@
 #endif
 
 #ifdef RENDER_FRAG
-	#define PCF_MAX_RADIUS 0.00016
+	#define PCF_MAX_RADIUS 0.16
 
 	const int pcf_sizes[4] = int[](4, 3, 2, 1);
 	const int pcf_max = 4;
@@ -101,7 +101,7 @@
 
 			float texSize = shadowMapResolution * 0.5;
 			vec2 viewSize = 2.0 / shadowProjectionScale[i];
-			vec2 pixelPerBlockScale = texSize / viewSize;
+			vec2 pixelPerBlockScale = texSize / viewSize * shadowPixelSize;
 
 			float texDepth = SampleDepth(i, offset * pixelPerBlockScale);
 
@@ -155,9 +155,14 @@
 				shadow += step(texDepth + EPSILON, shadowPos[tile].z);
 			}
 
-			float f = 1.0 - max(geoNoL, 0.0);
-			f = clamp(shadow / POISSON_SAMPLES - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
-			return clamp(f, 0.0, 1.0);
+			float s = shadow / POISSON_SAMPLES;
+
+			#if SHADOW_FILTER == 1
+				float f = 1.0 - max(geoNoL, 0.0);
+				s = clamp(s - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
+			#endif
+
+			return clamp(s, 0.0, 1.0);
 		}
 	#endif
 
