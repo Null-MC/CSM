@@ -65,6 +65,8 @@
 #endif
 
 #ifdef RENDER_FRAG
+	#define PCF_MAX_RADIUS 0.00016
+
 	const int pcf_sizes[4] = int[](4, 3, 2, 1);
 	const int pcf_max = 4;
 
@@ -154,7 +156,8 @@
 			}
 
 			float f = 1.0 - max(geoNoL, 0.0);
-			return clamp(shadow / POISSON_SAMPLES - 0.7*f, 0.0, 1.0) * ((1.0/0.3) * f);
+			f = clamp(shadow / POISSON_SAMPLES - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
+			return clamp(f, 0.0, 1.0);
 		}
 	#endif
 
@@ -171,7 +174,7 @@
 			int tile;
 			for (int i = 0; i < SHADOW_BLOCKER_SAMPLES; i++) {
 				vec2 offset = (poissonDisk[i] / 6.0) * searchWidth;
-				float texDepth = GetNearestDepth(offset * shadowPixelSize, tile);
+				float texDepth = GetNearestDepth(offset, tile);
 
 				if (texDepth < shadowPos[tile].z) { // - directionalLightShadowMapBias
 					avgBlockerDistance += texDepth;
@@ -184,7 +187,7 @@
 
 		float GetShadowing() {
 			// blocker search
-			float blockerDistance = FindBlockerDistance(16.0);
+			float blockerDistance = FindBlockerDistance(0.5 * PCF_MAX_RADIUS);
 			if (blockerDistance < 0.0) return 1.0;
 
 			// penumbra estimation
@@ -192,13 +195,13 @@
 			float penumbraWidth = (shadowPos[0].z - blockerDistance) / blockerDistance;
 
 			// percentage-close filtering
-			float uvRadius = clamp(penumbraWidth * 200.0, 0.0, 32.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
-			return 1.0 - GetShadowing_PCF(uvRadius);
+			float uvRadius = clamp(penumbraWidth * 10.0, 0.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+			return 1.0 - GetShadowing_PCF(uvRadius * PCF_MAX_RADIUS);
 		}
 	#elif SHADOW_FILTER == 1
 		// PCF
 		float GetShadowing() {
-			return 1.0 - GetShadowing_PCF(0.000016);
+			return 1.0 - GetShadowing_PCF(PCF_MAX_RADIUS);
 		}
 	#elif SHADOW_FILTER == 0
 		// Unfiltered

@@ -109,7 +109,8 @@ vec3 distort(vec3 v) {
 			}
 
 			float f = 1.0 - max(geoNoL, 0.0);
-			return clamp(shadow / POISSON_SAMPLES - 0.7*f, 0.0, 1.0) * ((1.0/0.3) * f);
+			f = clamp(shadow / POISSON_SAMPLES - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
+			return clamp(f, 0.0, 1.0);
 		}
 	#endif
 
@@ -150,8 +151,8 @@ vec3 distort(vec3 v) {
 			float penumbraWidth = (shadowPos.z - blockerDistance) / blockerDistance;
 
 			// percentage-close filtering
-			float uvRadius = min(1.0 + penumbraWidth * 420.0, 12.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
-			return 1.0 - GetShadowing_PCF(uvRadius * distortFactor);
+			float uvRadius = min(1.0 + penumbraWidth * distortFactor * 800.0, 16.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+			return 1.0 - GetShadowing_PCF(uvRadius);
 		}
 	#elif SHADOW_FILTER == 1
 		// PCF
