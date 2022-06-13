@@ -7,7 +7,7 @@
 		#endif
 
 		if (geoNoL > 0.0) { //vertex is facing towards the sun
-			vec4 posP = gbufferModelViewInverse * viewPos;
+			vec4 playerPos = gbufferModelViewInverse * viewPos;
 			float shadowResScale = (1.0 / shadowMapResolution) * tile_dist_bias_factor;
 			mat4 matShadowModelView = GetShadowModelViewMatrix();
 
@@ -15,13 +15,17 @@
 			PrepareCascadeMatrices(matShadowProjection);
 
 			for (int i = 0; i < 4; i++) {
+				shadowProjectionScale[i] = vec2(
+					matShadowProjection[i][0].x,
+					matShadowProjection[i][1].y);
+
 				vec2 shadowTilePos = GetShadowTilePos(i);
 				//mat4 matShadowProjection = GetShadowTileProjectionMatrix(i);
 				
 				#ifdef RENDER_TEXTURED
-					shadowPos[i] = (matShadowProjection[i] * (matShadowModelView * posP)).xyz; // convert to shadow screen space
+					shadowPos[i] = (matShadowProjection[i] * (matShadowModelView * playerPos)).xyz; // convert to shadow screen space
 				#else
-					shadowPos[i] = matShadowProjection[i] * (matShadowModelView * posP); // convert to shadow screen space
+					shadowPos[i] = matShadowProjection[i] * (matShadowModelView * playerPos); // convert to shadow screen space
 				#endif
 
 				shadowPos[i].xyz = shadowPos[i].xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
@@ -32,7 +36,8 @@
 				// TODO: BIAS NEEDS TO BE BASED ON DISTANCE
 				// In theory that should help soften the transition between cascades
 
-				if (i == 0) bias *= 0.75;
+				// TESTING: reduce the depth-range for the nearest cascade only
+				//if (i == 0) bias *= 0.75;
 
 				shadowPos[i].z -= min(bias / geoNoL, 0.1);
 			}
@@ -92,7 +97,11 @@
 			if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x >= shadowTilePos.x + 0.5) continue;
 			if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y >= shadowTilePos.y + 0.5) continue;
 
-			float texDepth = SampleDepth(i, offset);
+			float texSize = shadowMapResolution * 0.5;
+			vec2 viewSize = 2.0 / shadowProjectionScale[i];
+			vec2 pixelPerBlockScale = texSize / viewSize;
+
+			float texDepth = SampleDepth(i, offset * pixelPerBlockScale);
 
 			if (texDepth < shadowPos[i].z && texDepth < depth) {
 				depth = texDepth;
@@ -140,7 +149,7 @@
 			float shadow = 0.0;
 			for (int i = 0; i < POISSON_SAMPLES; i++) {
 				vec2 offset = (poissonDisk[i] / 6.0) * radius;
-				float texDepth = GetNearestDepth(offset * shadowPixelSize, tile);
+				float texDepth = GetNearestDepth(offset, tile);
 				shadow += step(texDepth + EPSILON, shadowPos[tile].z);
 			}
 
@@ -178,13 +187,9 @@
 			float blockerDistance = FindBlockerDistance(16.0);
 			if (blockerDistance < 0.0) return 1.0;
 
-			//return 0.0;
-
 			// penumbra estimation
 			// WARNING: IDK WTF to do about the tile index here! so it's 0
 			float penumbraWidth = (shadowPos[0].z - blockerDistance) / blockerDistance;
-
-			//return clamp(1.0 - penumbraWidth, 0.0, 1.0);
 
 			// percentage-close filtering
 			float uvRadius = clamp(penumbraWidth * 200.0, 0.0, 32.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
@@ -193,7 +198,7 @@
 	#elif SHADOW_FILTER == 1
 		// PCF
 		float GetShadowing() {
-			return 1.0 - GetShadowing_PCF(6.0);
+			return 1.0 - GetShadowing_PCF(0.000016);
 		}
 	#elif SHADOW_FILTER == 0
 		// Unfiltered

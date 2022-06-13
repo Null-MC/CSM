@@ -1,7 +1,5 @@
 #define RENDER_ENTITIES
 
-#include "/lib/common.glsl"
-
 varying vec2 lmcoord;
 varying vec2 texcoord;
 varying vec4 glcolor;
@@ -13,6 +11,7 @@ varying float geoNoL;
 	#if SHADOW_TYPE == 3
 		varying vec4 shadowPos[4];
 		flat varying vec3 shadowTileColor;
+		varying vec2 shadowProjectionScale[4];
 	#elif SHADOW_TYPE != 0
 		varying vec4 shadowPos;
 	#endif

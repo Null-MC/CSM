@@ -1,7 +1,5 @@
 #define RENDER_FINAL
 
-#include "/lib/common.glsl"
-
 #ifdef RENDER_VERTEX
 	out vec2 texcoord;
 

@@ -87,7 +87,7 @@ vec3 GetShadowTileColor(const in int tile) {
 		#endif
 	}
 
-	#ifdef SHADOW_CSM_TIGHTEN
+	#if defined SHADOW_CSM_TIGHTEN || defined DEBUG_CSM_FRUSTUM
 		void GetFrustumMinMax(const in mat4 matProjection, out vec3 clipMin, out vec3 clipMax) {
 			vec3 frustum[8] = vec3[](
 				vec3(-1.0, -1.0, -1.0),
@@ -123,7 +123,7 @@ vec3 GetShadowTileColor(const in int tile) {
 		float zFar = far;
 
 		// TESTING: reduce the depth-range for the nearest cascade only
-		if (tile == 0) zNear *= 0.5;
+		//if (tile == 0) zNear *= 0.5;
 
 		mat4 matShadowProjection = BuildOrthoProjectionMatrix(cascadeSize, cascadeSize, zNear, zFar);
 
@@ -234,7 +234,11 @@ vec3 GetShadowTileColor(const in int tile) {
 			#ifdef SHADOW_CSM_TIGHTEN
 				vec4 clipPos = matShadowProjection[i] * vec4(blockPos, 1.0);
 
-				vec3 blockPadding = 1.5 * vec3(matShadowProjection[i][0][0], matShadowProjection[i][1][1], -matShadowProjection[i][2][2]);
+				vec3 blockPadding = 1.5 * vec3(
+					matShadowProjection[i][0].x,
+					matShadowProjection[i][1].y,
+					-matShadowProjection[i][2].z);
+
 				vec3 paddedSize = 1.0 - blockPadding;
 
 				if (clipPos.x > -paddedSize.x && clipPos.x < paddedSize.x

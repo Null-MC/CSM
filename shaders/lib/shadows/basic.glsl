@@ -29,7 +29,7 @@ vec3 distort(vec3 v) {
 			if (geoNoL > 0.0) { //vertex is facing towards the sun
 				vec4 playerPos = gbufferModelViewInverse * viewPos;
 
-				#if RENDER_TEXTURED
+				#ifdef RENDER_TEXTURED
 					shadowPos = (shadowProjection * (shadowModelView * playerPos)).xyz; //convert to shadow screen space
 				#else
 					shadowPos = shadowProjection * (shadowModelView * playerPos); //convert to shadow screen space
@@ -51,7 +51,7 @@ vec3 distort(vec3 v) {
 			}
 			else { //vertex is facing away from the sun
 				// mark that this vertex does not need to check the shadow map.
-				#if RENDER_TEXTURED
+				#ifdef RENDER_TEXTURED
 					shadowPos = vec3(0.0);
 				#else
 					shadowPos = vec4(0.0);

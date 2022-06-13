@@ -1,7 +1,5 @@
 #define RENDER_COMPOSITE
 
-#include "/lib/common.glsl"
-
 #if SHADOW_TYPE == 3
 	uniform mat4 shadowModelView;
 	uniform float near;
@@ -13,8 +11,8 @@ varying vec2 texcoord;
 #if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
 	varying vec3 shadowTileColors[4];
 	varying mat4 matShadowToScene[4];
-	varying vec2 clipMin[4];
-	varying vec2 clipMax[4];
+	varying vec3 clipMin[4];
+	varying vec3 clipMax[4];
 #endif
 
 #ifdef RENDER_VERTEX
@@ -32,7 +30,7 @@ varying vec2 texcoord;
 		gl_Position = ftransform();
 		texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 
-		#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
+		#if SHADOW_TYPE == 3 && defined DEBUG_CSM_FRUSTUM && DEBUG_SHADOW_BUFFER != 0
 			mat4 matShadowModelView = GetShadowModelViewMatrix();
 
 			for (int tile = 0; tile < 4; tile++) {
@@ -52,29 +50,7 @@ varying vec2 texcoord;
 				mat4 matModelViewProjectionInv = inverse(matSceneProjectionRanged * gbufferModelView);
 				mat4 matSceneToShadow = matShadowProjection * matShadowModelView * matModelViewProjectionInv;
 
-				vec3 frustum[8] = vec3[](
-					vec3(-1.0, -1.0, -1.0),
-					vec3( 1.0, -1.0, -1.0),
-					vec3(-1.0,  1.0, -1.0),
-					vec3( 1.0,  1.0, -1.0),
-					vec3(-1.0, -1.0,  1.0),
-					vec3( 1.0, -1.0,  1.0),
-					vec3(-1.0,  1.0,  1.0),
-					vec3( 1.0,  1.0,  1.0));
-
-				for (int p = 0; p < 8; p++) {
-					vec4 shadowClipPos = matSceneToShadow * vec4(frustum[p], 1.0);
-					shadowClipPos.xyz /= shadowClipPos.w;
-
-					if (p == 0) {
-						clipMin[tile] = shadowClipPos.xy;
-						clipMax[tile] = shadowClipPos.xy;
-					}
-					else {
-						clipMin[tile] = min(clipMin[tile], shadowClipPos.xy);
-						clipMax[tile] = max(clipMax[tile], shadowClipPos.xy);
-					}
-				}
+				GetFrustumMinMax(matSceneToShadow, clipMin[tile], clipMax[tile]);
 			}
 		#endif
 	}
