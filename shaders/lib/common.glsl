@@ -1,6 +1,6 @@
 // MANUAL SETTINGS
 // The following settings can't be configured via GUI and need to be hard-coded!
-
+#define POISSON_DISK_SIZE 12
 
 // AUTOMATIC SETTINGS
 // You shouldn't have to touch these...

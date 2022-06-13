@@ -1,3 +1,5 @@
+flat varying int shadowTile;
+
 #ifdef RENDER_VERTEX
 	const float tile_dist_bias_factor = 0.012288;
 
@@ -7,12 +9,13 @@
 		#endif
 
 		if (geoNoL > 0.0) { //vertex is facing towards the sun
-			vec4 playerPos = gbufferModelViewInverse * viewPos;
 			float shadowResScale = (1.0 / shadowMapResolution) * tile_dist_bias_factor;
 			mat4 matShadowModelView = GetShadowModelViewMatrix();
 
 			mat4 matShadowProjection[4];
 			PrepareCascadeMatrices(matShadowProjection);
+
+			vec4 shadowViewPos = matShadowModelView * (gbufferModelViewInverse * viewPos);
 
 			for (int i = 0; i < 4; i++) {
 				shadowProjectionScale[i] = vec2(
@@ -23,9 +26,9 @@
 				//mat4 matShadowProjection = GetShadowTileProjectionMatrix(i);
 				
 				#ifdef RENDER_TEXTURED
-					shadowPos[i] = (matShadowProjection[i] * (matShadowModelView * playerPos)).xyz; // convert to shadow screen space
+					shadowPos[i] = (matShadowProjection[i] * shadowViewPos).xyz; // convert to shadow screen space
 				#else
-					shadowPos[i] = matShadowProjection[i] * (matShadowModelView * playerPos); // convert to shadow screen space
+					shadowPos[i] = matShadowProjection[i] * shadowViewPos; // convert to shadow screen space
 				#endif
 
 				shadowPos[i].xyz = shadowPos[i].xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
@@ -37,18 +40,21 @@
 				// In theory that should help soften the transition between cascades
 
 				// TESTING: reduce the depth-range for the nearest cascade only
-				//if (i == 0) bias *= 0.75;
+				//if (i == 0) bias *= 0.5;
 
 				shadowPos[i].z -= min(bias / geoNoL, 0.1);
 			}
 
+			shadowTile = GetShadowTile(matShadowProjection);
+
 			#if defined DEBUG_CASCADE_TINT && !defined RENDER_TEXTURED
-				int shadowTile = GetShadowTile(matShadowProjection);
 				shadowTileColor = GetShadowTileColor(shadowTile);
 			#endif
 		}
 		else { //vertex is facing away from the sun
 			// mark that this vertex does not need to check the shadow map.
+			shadowTile = -1;
+
 			#ifdef RENDER_TEXTURED
 				shadowPos[0] = vec3(0.0);
 				shadowPos[1] = vec3(0.0);
@@ -93,6 +99,7 @@
 		float depth = 1.0;
 		tile = -1;
 
+		float texDepth;
 		for (int i = 0; i < 4; i++) {
 			// Ignore if outside tile bounds
 			vec2 shadowTilePos = GetShadowTilePos(i);
@@ -103,7 +110,25 @@
 			vec2 viewSize = 2.0 / shadowProjectionScale[i];
 			vec2 pixelPerBlockScale = texSize / viewSize * shadowPixelSize;
 
-			float texDepth = SampleDepth(i, offset * pixelPerBlockScale);
+			//int sampleRadius = exp2(1.0 + max(i - shadowTile, 0.0));
+			if (i < shadowTile) {
+				// TODO: 4-tap sample
+				texDepth = 1.0;
+				for (int iy = 0; iy < 4; iy++) {
+					for (int ix = 0; ix < 4; ix++) {
+						vec2 texcoord = offset * pixelPerBlockScale;
+						texcoord.x += (ix - 1.5) * shadowPixelSize;
+						texcoord.y += (iy - 1.5) * shadowPixelSize;
+
+						float d = SampleDepth(i, texcoord);
+						texDepth = min(texDepth, d);
+					}
+				}
+			}
+			else {
+				texDepth = SampleDepth(i, offset * pixelPerBlockScale);
+			}
+
 
 			if (texDepth < shadowPos[i].z && texDepth < depth) {
 				depth = texDepth;
@@ -150,7 +175,7 @@
 			float texDepth;
 			float shadow = 0.0;
 			for (int i = 0; i < POISSON_SAMPLES; i++) {
-				vec2 offset = (poissonDisk[i] / 6.0) * radius;
+				vec2 offset = GetPoissonOffset(i) * radius;
 				float texDepth = GetNearestDepth(offset, tile);
 				shadow += step(texDepth + EPSILON, shadowPos[tile].z);
 			}
@@ -159,7 +184,7 @@
 
 			#if SHADOW_FILTER == 1
 				float f = 1.0 - max(geoNoL, 0.0);
-				s = clamp(s - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
+				s = clamp(s - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
 			#endif
 
 			return clamp(s, 0.0, 1.0);
@@ -178,7 +203,7 @@
 
 			int tile;
 			for (int i = 0; i < SHADOW_BLOCKER_SAMPLES; i++) {
-				vec2 offset = (poissonDisk[i] / 6.0) * searchWidth;
+				vec2 offset = GetPoissonOffset(i) * searchWidth;
 				float texDepth = GetNearestDepth(offset, tile);
 
 				if (texDepth < shadowPos[tile].z) { // - directionalLightShadowMapBias
@@ -206,7 +231,7 @@
 	#elif SHADOW_FILTER == 1
 		// PCF
 		float GetShadowing() {
-			return 1.0 - GetShadowing_PCF(PCF_MAX_RADIUS);
+			return 1.0 - GetShadowing_PCF(0.015);
 		}
 	#elif SHADOW_FILTER == 0
 		// Unfiltered

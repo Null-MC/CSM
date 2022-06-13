@@ -37,3 +37,7 @@ const vec2 poissonDisk[POISSON_SAMPLES] = vec2[](
 	vec2( 1.118359, -4.146132),
 	vec2( 2.667908, -4.248179),
 	vec2( 4.654964, -2.35809));
+
+vec2 GetPoissonOffset(const in int index) {
+	return poissonDisk[index] / 6.0;
+}

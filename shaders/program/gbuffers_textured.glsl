@@ -63,7 +63,11 @@ varying float geoNoL;
 		
 		uniform vec3 shadowLightPosition;
 
-		#include "/lib/shadows/poisson_36.glsl"
+		#if POISSON_DISK_SIZE == 12
+			#include "/lib/shadows/poisson_12.glsl"
+		#elif POISSON_DISK_SIZE == 36
+			#include "/lib/shadows/poisson_36.glsl"
+		#endif
 
 		#if SHADOW_TYPE == 3
 			#include "/lib/shadows/csm.glsl"

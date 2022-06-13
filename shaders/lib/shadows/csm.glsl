@@ -123,7 +123,7 @@ vec3 GetShadowTileColor(const in int tile) {
 		float zFar = far;
 
 		// TESTING: reduce the depth-range for the nearest cascade only
-		//if (tile == 0) zNear *= 0.5;
+		//if (tile == 0) zNear = 0.0;
 
 		mat4 matShadowProjection = BuildOrthoProjectionMatrix(cascadeSize, cascadeSize, zNear, zFar);
 

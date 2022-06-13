@@ -103,7 +103,7 @@ vec3 distort(vec3 v) {
 			float texDepth;
 			float shadow = 0.0;
 			for (int i = 0; i < POISSON_SAMPLES; i++) {
-				vec2 offset = (poissonDisk[i] / 6.0) * radius;
+				vec2 offset = GetPoissonOffset(i) * radius;
 				float texDepth = SampleDepth(offset * shadowPixelSize);
 				shadow += step(texDepth + EPSILON, shadowPos.z);
 			}
@@ -127,7 +127,7 @@ vec3 distort(vec3 v) {
 			int blockers = 0;
 
 			for (int i = 0; i < POISSON_SAMPLES; i++) {
-				vec2 offset = (poissonDisk[i] / 6.0) * searchWidth * shadowPixelSize;
+				vec2 offset = GetPoissonOffset(i) * searchWidth * shadowPixelSize;
 				float texDepth = SampleDepth(offset);
 
 				if (texDepth < shadowPos.z) { // - directionalLightShadowMapBias
