@@ -99,42 +99,17 @@ vec3 distort(vec3 v) {
 
 	#if SHADOW_FILTER != 0
 		// PCF
-		// float GetShadowing_PCF(int radius) {
-		// 	float texDepth;
-		// 	int sampleCount = 0;
-		// 	float shadow = 0.0;
-		// 	for (int y = -radius; y <= radius; y++) {
-		// 		for (int x = -radius; x <= radius; x++) {
-		// 			vec2 offset = vec2(x, y) * shadowPixelSize;
-
-		// 			float texDepth = SampleDepth(offset);
-
-		// 			//if (texDepth + EPSILON >= 1.0) continue;
-
-		// 			//shadow += shadowPos.z > texDepth ? 1.0 : 0.0;
-		// 			shadow += step(texDepth + EPSILON, shadowPos.z);
-		// 			sampleCount++;
-		// 		}
-		// 	}
-
-		// 	return sampleCount < 1 ? 0.0 : min(shadow / sampleCount, 1.0);
-		// }
-
 		float GetShadowing_PCF(float radius) {
 			float texDepth;
 			float shadow = 0.0;
 			for (int i = 0; i < POISSON_SAMPLES; i++) {
-				vec2 offset = (poissonDisk[i] / 6.0) * radius * shadowPixelSize;
-
-				float texDepth = SampleDepth(offset);
-
-				//if (texDepth + EPSILON >= 1.0) continue;
-
-				//shadow += shadowPos.z > texDepth ? 1.0 : 0.0;
+				vec2 offset = (poissonDisk[i] / 6.0) * radius;
+				float texDepth = SampleDepth(offset * shadowPixelSize);
 				shadow += step(texDepth + EPSILON, shadowPos.z);
 			}
 
-			return shadow / POISSON_SAMPLES;
+			float f = 1.0 - max(geoNoL, 0.0);
+			return clamp(shadow / POISSON_SAMPLES - 0.7*f, 0.0, 1.0) * ((1.0/0.3) * f);
 		}
 	#endif
 
@@ -171,25 +146,19 @@ vec3 distort(vec3 v) {
 			float blockerDistance = FindBlockerDistance(12.0 * distortFactor);
 			if (blockerDistance < 0.0) return 1.0;
 
-			//return 0.0;
-
 			// penumbra estimation
 			float penumbraWidth = (shadowPos.z - blockerDistance) / blockerDistance;
 
-			//return clamp(1.0 - penumbraWidth, 0.0, 1.0);
-
 			// percentage-close filtering
-			float uvRadius = clamp(penumbraWidth * 320.0, 0.0, 24.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
-			float shadow = GetShadowing_PCF(uvRadius * distortFactor);
-			return 1.0 - shadow*shadow;
+			float uvRadius = min(1.0 + penumbraWidth * 420.0, 12.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+			return 1.0 - GetShadowing_PCF(uvRadius * distortFactor);
 		}
 	#elif SHADOW_FILTER == 1
 		// PCF
 		float GetShadowing() {
 			float distortFactor = getDistortFactor(shadowPos.xy);
 			distortFactor = 1.0 - distortFactor*distortFactor;
-			float shadow = GetShadowing_PCF(8.0 * distortFactor);
-			return 1.0 - shadow*shadow;
+			return 1.0 - GetShadowing_PCF(8.0 * distortFactor);
 		}
 	#elif SHADOW_FILTER == 0
 		// Unfiltered
