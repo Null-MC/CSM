@@ -8,10 +8,11 @@ const int shadowtex1Format = R32F;
 //fix artifacts when colored shadows are enabled
 //const bool generateShadowMipmap = false;
 //const bool shadowcolor0Nearest = false;
-//const bool shadowtex0Mipmap = false;
-//const bool shadowtex0Nearest = false;
-//const bool shadowtex1Mipmap = false;
-//const bool shadowtex1Nearest = false;
+const bool shadowHardwareFiltering = true;
+const bool shadowtex0Mipmap = false;
+const bool shadowtex0Nearest = false;
+const bool shadowtex1Mipmap = false;
+const bool shadowtex1Nearest = false;
 
 const float shadowDistanceRenderMul = 1.0;
 

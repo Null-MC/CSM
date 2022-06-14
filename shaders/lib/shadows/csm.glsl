@@ -153,7 +153,7 @@ vec3 GetShadowTileColor(const in int tile) {
 			GetFrustumMinMax(matSceneToShadow, clipMin, clipMax);
 
 			// add block padding to clip min/max
-			vec2 blockPadding = 1.5 * vec2(matShadowProjection[0][0], matShadowProjection[1][1]);
+			vec2 blockPadding = 3.0 * vec2(matShadowProjection[0][0], matShadowProjection[1][1]);
 			clipMin.xy -= blockPadding;
 			clipMax.xy += blockPadding;
 

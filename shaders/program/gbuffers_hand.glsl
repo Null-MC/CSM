@@ -85,7 +85,7 @@ varying float geoNoL;
 	void main() {
 		vec4 color = BasicLighting();
 
-		#if defined DEBUG_CASCADE_TINT && !defined WORLD_END
+		#if SHADOW_TYPE == 3 && defined DEBUG_CASCADE_TINT && !defined WORLD_END
 			color.rgb *= 1.0 - LOD_TINT_FACTOR * (1.0 - shadowTileColor);
 		#endif
 		

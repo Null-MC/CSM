@@ -11,7 +11,8 @@ const float tile_dist_bias_factor = 0.012288;
 			shadowTileColor = vec3(1.0);
 		#endif
 
-		if (geoNoL > 0.0) { //vertex is facing towards the sun
+		if (geoNoL > 0.0) {
+			// vertex is facing towards the sun
 			mat4 matShadowProjection[4];
 			PrepareCascadeMatrices(matShadowProjection);
 
@@ -25,10 +26,11 @@ const float tile_dist_bias_factor = 0.012288;
 
 				cascadeSize[i] = GetCascadeDistance(i);
 				
+				// convert to shadow screen space
 				#ifdef RENDER_TEXTURED
-					shadowPos[i] = (matShadowProjection[i] * shadowViewPos).xyz; // convert to shadow screen space
+					shadowPos[i] = (matShadowProjection[i] * shadowViewPos).xyz;
 				#else
-					shadowPos[i] = matShadowProjection[i] * shadowViewPos; // convert to shadow screen space
+					shadowPos[i] = matShadowProjection[i] * shadowViewPos;
 				#endif
 
 				vec2 shadowTilePos = GetShadowTilePos(i);
@@ -42,7 +44,8 @@ const float tile_dist_bias_factor = 0.012288;
 				shadowTileColor = GetShadowTileColor(shadowTile);
 			#endif
 		}
-		else { //vertex is facing away from the sun
+		else {
+			// vertex is facing away from the sun
 			// mark that this vertex does not need to check the shadow map.
 			shadowTile = -1;
 
@@ -245,7 +248,7 @@ const float tile_dist_bias_factor = 0.012288;
 		float GetShadowing() {
 			// blocker search
 			float blockerDistance = FindBlockerDistance(0.5 * PCF_MAX_RADIUS);
-			if (blockerDistance < 0.0) return 1.0;
+			if (blockerDistance < 0.0001) return 1.0;
 
 			// penumbra estimation
 			// WARNING: IDK WTF to do about the tile index here! so it's 0

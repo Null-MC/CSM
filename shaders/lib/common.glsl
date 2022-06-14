@@ -56,8 +56,6 @@
 #endif
 
 
-const float shadowPixelSize = 1.0 / shadowMapResolution;
-
 vec3 RGBToLinear(const in vec3 color) {
 	return pow(color, vec3(GAMMA));
 }

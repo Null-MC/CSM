@@ -18,21 +18,25 @@
 			vNormal = normalize(gl_NormalMatrix * gl_Normal);
 		#endif
 
-		#ifdef RENDER_TEXTURED
-			geoNoL = 1.0;
-		#else
-			vec3 lightDir = normalize(shadowLightPosition);
-			geoNoL = dot(lightDir, vNormal);
+		#ifndef WORLD_END
+			#ifdef RENDER_TEXTURED
+				geoNoL = 1.0;
+			#else
+				vec3 lightDir = normalize(shadowLightPosition);
+				geoNoL = dot(lightDir, vNormal);
 
-			#if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
-				//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
-				//in other words, don't darken the back side of it unless something else is casting a shadow on it.
-				if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10004.0) geoNoL = 1.0;
+				// #if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
+				// 	//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
+				// 	//in other words, don't darken the back side of it unless something else is casting a shadow on it.
+				// 	if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10004.0) geoNoL = 1.0;
+				// #endif
 			#endif
-		#endif
 
-		#if SHADOW_TYPE != 0 && !defined RENDER_SHADOW && !defined WORLD_END
-			ApplyShadows(viewPos);
+			#if SHADOW_TYPE != 0 && !defined RENDER_SHADOW && !defined WORLD_END
+				ApplyShadows(viewPos);
+			#endif
+		#else
+			geoNoL = 1.0;
 		#endif
 
 		gl_Position = gl_ProjectionMatrix * viewPos;
