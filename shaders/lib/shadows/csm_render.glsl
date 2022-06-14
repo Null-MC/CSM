@@ -1,3 +1,5 @@
+#extension GL_ARB_texture_gather : enable
+
 flat varying int shadowTile;
 
 #ifdef RENDER_VERTEX
@@ -23,7 +25,6 @@ flat varying int shadowTile;
 					matShadowProjection[i][1].y);
 
 				vec2 shadowTilePos = GetShadowTilePos(i);
-				//mat4 matShadowProjection = GetShadowTileProjectionMatrix(i);
 				
 				#ifdef RENDER_TEXTURED
 					shadowPos[i] = (matShadowProjection[i] * shadowViewPos).xyz; // convert to shadow screen space
@@ -76,7 +77,7 @@ flat varying int shadowTile;
 	const int pcf_sizes[4] = int[](4, 3, 2, 1);
 	const int pcf_max = 4;
 
-	float SampleDepth(const in int tile, const in vec2 offset) {
+	float SampleDepth(const in vec2 offset, const in int tile) {
 		#if SHADOW_COLORS == 0
 			//for normal shadows, only consider the closest thing to the sun,
 			//regardless of whether or not it's opaque.
@@ -93,6 +94,23 @@ flat varying int shadowTile;
 				return texture2DProj(shadowtex1, vec4(shadowPos[tile].xy + offset * shadowPos[tile].w, shadowPos[tile].z, shadowPos[tile].w)).r;
 			#endif
 		#endif
+	}
+
+	float SampleDepth4(const in vec2 offset, const in int tile) {
+		#if SHADOW_COLORS == 0
+			//for normal shadows, only consider the closest thing to the sun,
+			//regardless of whether or not it's opaque.
+			vec4 samples = textureGather(shadowtex0, shadowPos[tile].xy + offset);
+		#else
+			//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
+			vec4 samples = textureGather(shadowtex1, shadowPos[tile].xy + offset);
+		#endif
+
+		float result = samples[0];
+		for (int i = 1; i < 4; i++)
+			result = min(result, samples[i]);
+
+		return result;
 	}
 
 	float GetNearestDepth(const in vec2 offset, out int tile) {
@@ -114,21 +132,33 @@ flat varying int shadowTile;
 			if (i < shadowTile) {
 				// TODO: 4-tap sample
 				texDepth = 1.0;
-				for (int iy = 0; iy < 4; iy++) {
-					for (int ix = 0; ix < 4; ix++) {
+				for (int iy = 0; iy < 2; iy++) {
+					for (int ix = 0; ix < 2; ix++) {
 						vec2 texcoord = offset * pixelPerBlockScale;
-						texcoord.x += (ix - 1.5) * shadowPixelSize;
-						texcoord.y += (iy - 1.5) * shadowPixelSize;
+						texcoord.x += (2.0 * ix - 2.0) * shadowPixelSize;
+						texcoord.y += (2.0 * iy - 2.0) * shadowPixelSize;
 
-						float d = SampleDepth(i, texcoord);
+						float d = SampleDepth4(texcoord, i);
 						texDepth = min(texDepth, d);
 					}
 				}
+				// for (int iy = 0; iy < 4; iy++) {
+				// 	for (int ix = 0; ix < 4; ix++) {
+				// 		vec2 texcoord = offset * pixelPerBlockScale;
+				// 		texcoord.x += (ix - 1.5) * shadowPixelSize;
+				// 		texcoord.y += (iy - 1.5) * shadowPixelSize;
+
+				// 		float d = SampleDepth(texcoord, i);
+				// 		texDepth = min(texDepth, d);
+				// 	}
+				// }
+			}
+			else if (i > shadowTile) {
+				texDepth = SampleDepth4(offset * pixelPerBlockScale, i);
 			}
 			else {
-				texDepth = SampleDepth(i, offset * pixelPerBlockScale);
+				texDepth = SampleDepth(offset * pixelPerBlockScale, i);
 			}
-
 
 			if (texDepth < shadowPos[i].z && texDepth < depth) {
 				depth = texDepth;
