@@ -10,7 +10,7 @@ varying float geoNoL;
 #ifndef WORLD_END
 	#if SHADOW_TYPE == 3
 		varying vec4 shadowPos[4];
-		varying vec2 shadowProjectionScale[4];
+		varying vec2 shadowProjectionSize[4];
 		flat varying vec3 shadowTileColor;
 	#elif SHADOW_TYPE != 0
 		varying vec4 shadowPos;

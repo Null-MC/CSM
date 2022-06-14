@@ -20,7 +20,7 @@ flat varying int shadowTile;
 			vec4 shadowViewPos = matShadowModelView * (gbufferModelViewInverse * viewPos);
 
 			for (int i = 0; i < 4; i++) {
-				shadowProjectionScale[i] = vec2(
+				shadowProjectionSize[i] = 2.0 / vec2(
 					matShadowProjection[i][0].x,
 					matShadowProjection[i][1].y);
 
@@ -113,14 +113,18 @@ flat varying int shadowTile;
 		return result;
 	}
 
-	// float CompareDepth4(const in vec2 offset, const in flat z, const in int tile) {
+	// float CompareDepth4(const in vec2 offset, const in float z, const in int tile) {
 	// 	#if SHADOW_COLORS == 0
-	// 		vec4 samples = shadowGather(shadowtex0, shadowPos[tile].xy + offset);
+	// 		vec4 samples = textureGather(shadowtex0, shadowPos[tile].xy + offset, shadowPos[tile].z);
 	// 	#else
-	// 		vec4 samples = shadowGather(shadowtex1, shadowPos[tile].xy + offset);
+	// 		vec4 samples = textureGather(shadowtex1, shadowPos[tile].xy + offset, shadowPos[tile].z);
 	// 	#endif
 
-	// 	return step(z, samples);
+	// 	float result = samples[0];
+	// 	for (int i = 1; i < 4; i++)
+	// 		if (samples[i] < z) return 1.0;
+
+	// 	return 0.0;
 	// }
 
 	float GetNearestDepth(const in vec2 offset, out int tile) {
@@ -135,36 +139,88 @@ flat varying int shadowTile;
 			if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y >= shadowTilePos.y + 0.5) continue;
 
 			float texSize = shadowMapResolution * 0.5;
-			vec2 viewSize = 2.0 / shadowProjectionScale[i];
+			vec2 viewSize = shadowProjectionSize[i];
 			vec2 pixelPerBlockScale = texSize / viewSize * shadowPixelSize;
+			
+			vec2 t = offset * pixelPerBlockScale;
+			texDepth = SampleDepth(t, i);
 
 			//int sampleRadius = exp2(1.0 + max(i - shadowTile, 0.0));
-			if (i < shadowTile) {
-				// texDepth = 1.0;
-				// for (int iy = 0; iy < 2; iy++) {
-				// 	for (int ix = 0; ix < 2; ix++) {
-				// 		vec2 texcoord = offset * pixelPerBlockScale;
-				// 		texcoord.x += (2.0 * ix - 1.0) * shadowPixelSize;
-				// 		texcoord.y += (2.0 * iy - 1.0) * shadowPixelSize;
+			if (i != shadowTile) {
+				//texDepth = SampleDepth4(offset * pixelPerBlockScale - shadowPixelSize, tile);
 
-				// 		float d = SampleDepth4(texcoord, i);
-				// 		texDepth = min(texDepth, d);
-				// 	}
-				// }
-				texDepth = SampleDepth4(offset * pixelPerBlockScale - shadowPixelSize, i);
+				vec2 ratio;
+				//if (i < shadowTile)
+					ratio = shadowProjectionSize[shadowTile] / shadowProjectionSize[i];
+				//else
+				//	ratio = shadowProjectionSize[i] / shadowProjectionSize[shadowTile];
+
+				vec4 samples;
+				samples.x = SampleDepth(t + vec2(-1.0, 0.0)*ratio*shadowPixelSize, i);
+				samples.y = SampleDepth(t + vec2( 1.0, 0.0)*ratio*shadowPixelSize, i);
+				samples.z = SampleDepth(t + vec2( 0.0,-1.0)*ratio*shadowPixelSize, i);
+				samples.w = SampleDepth(t + vec2( 0.0, 1.0)*ratio*shadowPixelSize, i);
+
+				texDepth = min(texDepth, samples.x);
+				texDepth = min(texDepth, samples.y);
+				texDepth = min(texDepth, samples.z);
+				texDepth = min(texDepth, samples.w);
 			}
-			else if (i > shadowTile) {
-				texDepth = SampleDepth4(offset * pixelPerBlockScale - shadowPixelSize, i);
-			}
-			else {
-				texDepth = SampleDepth(offset * pixelPerBlockScale, i);
-			}
+			// else if (i > shadowTile) {
+			// 	//depth = SampleDepth4(offset * pixelPerBlockScale - shadowPixelSize, tile);
+
+			// 	vec3 samples;
+			// 	samples.x = SampleDepth(t + vec2(1.0, 1.0)*shadowPixelSize, i);
+			// 	samples.y = SampleDepth(t + vec2(1.0, 1.0)*shadowPixelSize, i);
+			// 	samples.z = SampleDepth(t + vec2(1.0, 1.0)*shadowPixelSize, i);
+			// 	texDepth = min(texDepth, samples.x);
+			// 	texDepth = min(texDepth, samples.y);
+			// 	texDepth = min(texDepth, samples.z);
+			// }
 
 			if (texDepth < shadowPos[i].z && texDepth < depth) {
 				depth = texDepth;
 				tile = i;
 			}
 		}
+
+		return depth;
+	}
+
+	float GetCascadeDepth(const in vec2 offset, out int tile) {
+		float depth = GetNearestDepth(offset, tile);
+
+		// float texSize = shadowMapResolution * 0.5;
+		// vec2 viewSize = shadowProjectionSize[tile];
+		// vec2 pixelPerBlockScale = texSize / viewSize * shadowPixelSize;
+
+		// //int sampleRadius = exp2(1.0 + max(i - shadowTile, 0.0));
+		// if (tile < shadowTile) {
+		// 	//texDepth = SampleDepth4(offset * pixelPerBlockScale - shadowPixelSize, tile);
+
+		// 	vec4 samples;
+		// 	vec2 t = offset * pixelPerBlockScale;
+		// 	samples.x = SampleDepth(t + vec2(-2.0, 0.0)*shadowPixelSize, tile);
+		// 	samples.y = SampleDepth(t + vec2( 2.0, 0.0)*shadowPixelSize, tile);
+		// 	samples.z = SampleDepth(t + vec2( 0.0,-2.0)*shadowPixelSize, tile);
+		// 	samples.w = SampleDepth(t + vec2( 0.0, 2.0)*shadowPixelSize, tile);
+		// 	depth = min(depth, samples.x);
+		// 	depth = min(depth, samples.y);
+		// 	depth = min(depth, samples.z);
+		// 	depth = min(depth, samples.w);
+		// }
+		// else if (tile > shadowTile) {
+		// 	//depth = SampleDepth4(offset * pixelPerBlockScale - shadowPixelSize, tile);
+
+		// 	vec3 samples;
+		// 	vec2 t = offset * pixelPerBlockScale;
+		// 	samples.x = SampleDepth(t + vec2(1.0, 1.0)*shadowPixelSize, tile);
+		// 	samples.y = SampleDepth(t + vec2(1.0, 1.0)*shadowPixelSize, tile);
+		// 	samples.z = SampleDepth(t + vec2(1.0, 1.0)*shadowPixelSize, tile);
+		// 	depth = min(depth, samples.x);
+		// 	depth = min(depth, samples.y);
+		// 	depth = min(depth, samples.z);
+		// }
 
 		return depth;
 	}
@@ -206,16 +262,14 @@ flat varying int shadowTile;
 			float shadow = 0.0;
 			for (int i = 0; i < POISSON_SAMPLES; i++) {
 				vec2 offset = GetPoissonOffset(i) * radius;
-				float texDepth = GetNearestDepth(offset, tile);
+				float texDepth = GetCascadeDepth(offset, tile);
 				shadow += step(texDepth + EPSILON, shadowPos[tile].z);
 			}
 
 			float s = shadow / POISSON_SAMPLES;
 
-			#if SHADOW_FILTER == 1
-				float f = 1.0 - max(geoNoL, 0.0);
-				s = clamp(s - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
-			#endif
+			float f = 1.0 - max(geoNoL, 0.0);
+			s = clamp(s - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
 
 			return clamp(s, 0.0, 1.0);
 		}
@@ -234,7 +288,7 @@ flat varying int shadowTile;
 			int tile;
 			for (int i = 0; i < SHADOW_BLOCKER_SAMPLES; i++) {
 				vec2 offset = GetPoissonOffset(i) * searchWidth;
-				float texDepth = GetNearestDepth(offset, tile);
+				float texDepth = GetCascadeDepth(offset, tile);
 
 				if (texDepth < shadowPos[tile].z) { // - directionalLightShadowMapBias
 					avgBlockerDistance += texDepth;
@@ -255,8 +309,14 @@ flat varying int shadowTile;
 			float penumbraWidth = (shadowPos[0].z - blockerDistance) / blockerDistance;
 
 			// percentage-close filtering
-			float uvRadius = clamp(penumbraWidth * 10.0, 0.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
-			return 1.0 - GetShadowing_PCF(uvRadius * PCF_MAX_RADIUS);
+			float uvRadius = clamp(penumbraWidth * 10.0, 0.0, 1.0) * PCF_MAX_RADIUS; // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+			if (uvRadius <= shadowPixelSize) {
+				int tile;
+				float texDepth = GetCascadeDepth(vec2(0.0), tile);
+				return step(1.0, texDepth + EPSILON);
+			}
+
+			return 1.0 - GetShadowing_PCF(uvRadius);
 		}
 	#elif SHADOW_FILTER == 1
 		// PCF
@@ -267,7 +327,7 @@ flat varying int shadowTile;
 		// Unfiltered
 		float GetShadowing() {
 			int tile;
-			float texDepth = GetNearestDepth(ivec2(0.0), tile);
+			float texDepth = GetCascadeDepth(vec2(0.0), tile);
 			return step(1.0, texDepth + EPSILON);
 		}
 	#endif

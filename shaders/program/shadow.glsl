@@ -93,9 +93,7 @@ varying vec4 glcolor;
 			PrepareCascadeMatrices(matShadowProjection);
 
 			int shadowTile = GetShadowTile(matShadowProjection);
-			//mat4 matShadowProjection = GetShadowTileProjectionMatrix(shadowTile);
 			shadowTilePos = GetShadowTilePos(shadowTile);
-
 			gl_Position = matShadowProjection[shadowTile] * (gl_ModelViewMatrix * pos);
 
 			gl_Position.xy = gl_Position.xy * 0.5 + 0.5;

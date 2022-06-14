@@ -10,7 +10,7 @@ varying float geoNoL;
 #ifndef WORLD_END
 	#if SHADOW_TYPE == 3
 		varying vec3 shadowPos[4]; //normals don't exist for particles
-		varying vec2 shadowProjectionScale[4];
+		varying vec2 shadowProjectionSize[4];
 	#elif SHADOW_TYPE != 0
 		varying vec3 shadowPos; //normals don't exist for particles
 	#endif
