@@ -203,16 +203,19 @@ const float tile_dist_bias_factor = 0.012288;
 
 	#if SHADOW_FILTER != 0
 		float GetShadowing_PCF(float radius) {
+			int sampleCount = POISSON_SAMPLES;
+			if (radius <= shadowPixelSize) sampleCount = 1;
+
 			int tile;
 			float texDepth;
 			float shadow = 0.0;
-			for (int i = 0; i < POISSON_SAMPLES; i++) {
+			for (int i = 0; i < sampleCount; i++) {
 				vec2 offset = GetPoissonOffset(i) * radius;
 				float texDepth = GetNearestDepth(offset, tile);
 				shadow += step(texDepth + EPSILON, shadowPos[tile].z);
 			}
 
-			float s = shadow / POISSON_SAMPLES;
+			float s = shadow / sampleCount;
 
 			float f = 1.0 - max(geoNoL, 0.0);
 			s = clamp(s - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
@@ -225,15 +228,15 @@ const float tile_dist_bias_factor = 0.012288;
 		// PCF + PCSS
 		#define SHADOW_BLOCKER_SAMPLES 16
 
-		float FindBlockerDistance(float searchWidth) {
-			//float searchWidth = SearchWidth(uvLightSize, shadowPos.z);
-			//float searchWidth = 6.0; //SHADOW_LIGHT_SIZE * (shadowPos.z - PCSS_NEAR) / shadowPos.z;
+		float FindBlockerDistance(float radius) {
+			//float radius = SearchWidth(uvLightSize, shadowPos.z);
+			//float radius = 6.0; //SHADOW_LIGHT_SIZE * (shadowPos.z - PCSS_NEAR) / shadowPos.z;
 			float avgBlockerDistance = 0;
 			int blockers = 0;
 
 			int tile;
 			for (int i = 0; i < SHADOW_BLOCKER_SAMPLES; i++) {
-				vec2 offset = GetPoissonOffset(i) * searchWidth;
+				vec2 offset = GetPoissonOffset(i) * radius;
 				float texDepth = GetNearestDepth(offset, tile);
 
 				if (texDepth < shadowPos[tile].z) { // - directionalLightShadowMapBias
@@ -247,21 +250,14 @@ const float tile_dist_bias_factor = 0.012288;
 
 		float GetShadowing() {
 			// blocker search
-			float blockerDistance = FindBlockerDistance(0.5 * PCF_MAX_RADIUS);
-			if (blockerDistance < 0.0001) return 1.0;
+			float blockerDistance = FindBlockerDistance(0.5 * SHADOW_PCF_SIZE);
+			if (blockerDistance < 0.01) return 1.0;
 
 			// penumbra estimation
-			// WARNING: IDK WTF to do about the tile index here! so it's 0
-			float penumbraWidth = (shadowPos[0].z - blockerDistance) / blockerDistance;
+			float penumbraWidth = (shadowPos[shadowTile].z - blockerDistance) / blockerDistance;
 
 			// percentage-close filtering
-			float uvRadius = clamp(penumbraWidth * 10.0, 0.0, 1.0) * PCF_MAX_RADIUS; // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
-			if (uvRadius <= shadowPixelSize) {
-				int tile;
-				float texDepth = GetNearestDepth(vec2(0.0), tile);
-				return step(1.0, texDepth + EPSILON);
-			}
-
+			float uvRadius = clamp(penumbraWidth * 40.0, 0.0, 1.0) * SHADOW_PCF_SIZE; // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
 			return 1.0 - GetShadowing_PCF(uvRadius);
 		}
 	#elif SHADOW_FILTER == 1
