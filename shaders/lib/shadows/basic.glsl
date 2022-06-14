@@ -41,8 +41,8 @@ vec3 distort(vec3 v) {
 					shadowPos.z -= SHADOW_DISTORTED_BIAS * SHADOW_BIAS_SCALE * (distortFactor * distortFactor) / abs(geoNoL); //apply shadow bias
 				#elif SHADOW_TYPE == 1
 					//shadowPos.z *= 0.5;
-					float shadowResScale = range / shadowMapResolution;
 					float range = min(shadowDistance, far * SHADOW_CSM_FIT_FARSCALE);
+					float shadowResScale = range / shadowMapResolution;
 					float bias = SHADOW_BASIC_BIAS * shadowResScale * SHADOW_BIAS_SCALE;
 					shadowPos.z -= min(bias / abs(geoNoL), 0.1); //apply shadow bias
 				#endif

@@ -113,6 +113,16 @@ flat varying int shadowTile;
 		return result;
 	}
 
+	// float CompareDepth4(const in vec2 offset, const in flat z, const in int tile) {
+	// 	#if SHADOW_COLORS == 0
+	// 		vec4 samples = shadowGather(shadowtex0, shadowPos[tile].xy + offset);
+	// 	#else
+	// 		vec4 samples = shadowGather(shadowtex1, shadowPos[tile].xy + offset);
+	// 	#endif
+
+	// 	return step(z, samples);
+	// }
+
 	float GetNearestDepth(const in vec2 offset, out int tile) {
 		float depth = 1.0;
 		tile = -1;
@@ -130,31 +140,21 @@ flat varying int shadowTile;
 
 			//int sampleRadius = exp2(1.0 + max(i - shadowTile, 0.0));
 			if (i < shadowTile) {
-				// TODO: 4-tap sample
-				texDepth = 1.0;
-				for (int iy = 0; iy < 2; iy++) {
-					for (int ix = 0; ix < 2; ix++) {
-						vec2 texcoord = offset * pixelPerBlockScale;
-						texcoord.x += (2.0 * ix - 2.0) * shadowPixelSize;
-						texcoord.y += (2.0 * iy - 2.0) * shadowPixelSize;
-
-						float d = SampleDepth4(texcoord, i);
-						texDepth = min(texDepth, d);
-					}
-				}
-				// for (int iy = 0; iy < 4; iy++) {
-				// 	for (int ix = 0; ix < 4; ix++) {
+				// texDepth = 1.0;
+				// for (int iy = 0; iy < 2; iy++) {
+				// 	for (int ix = 0; ix < 2; ix++) {
 				// 		vec2 texcoord = offset * pixelPerBlockScale;
-				// 		texcoord.x += (ix - 1.5) * shadowPixelSize;
-				// 		texcoord.y += (iy - 1.5) * shadowPixelSize;
+				// 		texcoord.x += (2.0 * ix - 1.0) * shadowPixelSize;
+				// 		texcoord.y += (2.0 * iy - 1.0) * shadowPixelSize;
 
-				// 		float d = SampleDepth(texcoord, i);
+				// 		float d = SampleDepth4(texcoord, i);
 				// 		texDepth = min(texDepth, d);
 				// 	}
 				// }
+				texDepth = SampleDepth4(offset * pixelPerBlockScale - shadowPixelSize, i);
 			}
 			else if (i > shadowTile) {
-				texDepth = SampleDepth4(offset * pixelPerBlockScale, i);
+				texDepth = SampleDepth4(offset * pixelPerBlockScale - shadowPixelSize, i);
 			}
 			else {
 				texDepth = SampleDepth(offset * pixelPerBlockScale, i);
