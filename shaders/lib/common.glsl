@@ -1,9 +1,3 @@
-// MANUAL SETTINGS
-// The following settings can't be configured via GUI and need to be hard-coded!
-#define POISSON_DISK_SIZE 12
-
-// AUTOMATIC SETTINGS
-// You shouldn't have to touch these...
 #define SHADOW_TYPE 3 // [0 1 2 3]
 #define LIGHTING_TYPE 0 // [0 1 2]
 
@@ -18,6 +12,8 @@
 #define SHADOW_CSM_FITRANGE
 #define SHADOW_CSM_TIGHTEN
 #define SHADOW_FILTER 0 // [0 1 2]
+#define SHADOW_PCF_SIZE 0.010// [0.005 0.010 0.015 0.020 0.025 0.030]
+#define SHADOW_PCF_SAMPLES 12 // [12 36]
 
 // World Options
 #define ENABLE_WAVING

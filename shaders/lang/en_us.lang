@@ -5,12 +5,6 @@ value.SHADOW_TYPE.1=Basic
 value.SHADOW_TYPE.2=Distorted
 value.SHADOW_TYPE.3=Cascaded
 
-option.LIGHTING_TYPE=Lighting Type
-option.LIGHTING_TYPE.comment=The type of shadow mapping to use.
-value.LIGHTING_TYPE.0=Basic
-value.LIGHTING_TYPE.1=Phong
-value.LIGHTING_TYPE.2=Blinn-Phong
-
 
 option.shadowMapResolution=Shadow Resolution
 option.shadowMapResolution.comment=Resolution of the shadow map. Higher numbers mean more accurate shadows.
@@ -80,13 +74,19 @@ option.SHADOW_CSM_FITRANGE.comment=When enabled, all but the nearest cascade wil
 option.SHADOW_CSM_TIGHTEN=Fit CSM to Frustum
 option.SHADOW_CSM_TIGHTEN.comment=When enabled, the shadows cascades will be tightly fit to the view frustum to improve quality. Applies to CSM only. NOTE: disables entity shadows because Optifine bugs!
 
-
 option.SHADOW_ENTITY_CASCADE=Entity Cascade
 option.SHADOW_ENTITY_CASCADE.comment=The fixed cascade level for rendering entity shadows. Applies to CSM only.
 value.SHADOW_ENTITY_CASCADE.0=1
 value.SHADOW_ENTITY_CASCADE.1=2
 value.SHADOW_ENTITY_CASCADE.2=3
 value.SHADOW_ENTITY_CASCADE.3=4
+
+option.SHADOW_PCF_SIZE=PCF Radius
+option.SHADOW_PCF_SIZE.comment=The radius of the shadow blurring using a block-sized scale.
+
+option.SHADOW_PCF_SAMPLES=PCF Samples
+option.SHADOW_PCF_SAMPLES.comment=The number of samples to use when blurring.
+
 
 screen.WORLD_OPTIONS=World Options
 screen.WORLD_OPTIONS.comment=Options for everything else.
