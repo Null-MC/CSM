@@ -1,5 +1,4 @@
 #define SHADOW_TYPE 3 // [0 1 2 3]
-#define LIGHTING_TYPE 0 // [0 1 2]
 
 // Shadow Options
 //#define SHADOW_EXCLUDE_ENTITIES
@@ -12,7 +11,7 @@
 #define SHADOW_CSM_FITRANGE
 #define SHADOW_CSM_TIGHTEN
 #define SHADOW_FILTER 0 // [0 1 2]
-#define SHADOW_PCF_SIZE 0.010// [0.005 0.010 0.015 0.020 0.025 0.030]
+#define SHADOW_PCF_SIZE 0.010// [0.005 0.010 0.020 0.030 0.040 0.050 0.070]
 #define SHADOW_PCF_SAMPLES 12 // [12 36]
 
 // World Options
@@ -25,6 +24,7 @@
 
 
 // INTERNAL SETTINGS
+#define LIGHTING_TYPE 0 // [0 1 2]
 #define SHADOW_BASIC_BIAS 0.035
 #define SHADOW_DISTORTED_BIAS 0.005
 #define SHADOW_CSM_FIT_FARSCALE 1.1

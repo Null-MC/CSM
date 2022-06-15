@@ -73,6 +73,8 @@ varying float geoNoL;
 			#include "/lib/shadows/csm.glsl"
 			#include "/lib/shadows/csm_render.glsl"
 		#elif SHADOW_TYPE != 0
+			uniform mat4 shadowProjection;
+		
 			#include "/lib/shadows/basic.glsl"
 		#endif
 	#endif
