@@ -203,7 +203,7 @@ const float tile_dist_bias_factor = 0.012288;
 			float texDepth;
 			float shadow = 0.0;
 			for (int i = 0; i < sampleCount; i++) {
-				vec2 blockOffset = GetPoissonOffset(i) * blockRadius;
+				vec2 blockOffset = poissonDisk[i] * blockRadius;
 				float texDepth = GetNearestDepth(blockOffset, tile);
 				shadow += step(texDepth + EPSILON, shadowPos[tile].z);
 			}
@@ -216,7 +216,7 @@ const float tile_dist_bias_factor = 0.012288;
 				return clamp(f, 0.0, 1.0);
 			#else
 				shadow /= sampleCount;
-				return shadow * shadow;
+				return smoothstep(0.0, 1.0, shadow);// * shadow;
 			#endif
 		}
 	#endif
@@ -236,7 +236,7 @@ const float tile_dist_bias_factor = 0.012288;
 
 			int tile;
 			for (int i = 0; i < sampleCount; i++) {
-				vec2 blockOffset = GetPoissonOffset(i) * blockRadius;
+				vec2 blockOffset = poissonDisk[i] * blockRadius;
 				float texDepth = GetNearestDepth(blockOffset, tile);
 
 				if (texDepth < shadowPos[tile].z) { // - directionalLightShadowMapBias

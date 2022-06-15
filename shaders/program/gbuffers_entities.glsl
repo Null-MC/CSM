@@ -67,6 +67,8 @@ varying float geoNoL;
 
 		#if SHADOW_PCF_SAMPLES == 12
 			#include "/lib/shadows/poisson_12.glsl"
+		#elif SHADOW_PCF_SAMPLES == 24
+			#include "/lib/shadows/poisson_24.glsl"
 		#elif SHADOW_PCF_SAMPLES == 36
 			#include "/lib/shadows/poisson_36.glsl"
 		#endif
