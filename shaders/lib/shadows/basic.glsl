@@ -115,8 +115,7 @@ vec3 distort(const in vec3 v) {
 				f = clamp(shadow / sampleCount - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
 				return clamp(f, 0.0, 1.0);
 			#else
-				shadow /= sampleCount;
-				return shadow * shadow;
+				return expStep(shadow / sampleCount);
 			#endif
 		}
 

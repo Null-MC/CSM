@@ -215,8 +215,7 @@ const float tile_dist_bias_factor = 0.012288;
 				f = clamp(shadow / sampleCount - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
 				return clamp(f, 0.0, 1.0);
 			#else
-				shadow /= sampleCount;
-				return smoothstep(0.0, 1.0, shadow);// * shadow;
+				return expStep(shadow / sampleCount);
 			#endif
 		}
 	#endif
