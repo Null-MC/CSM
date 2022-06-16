@@ -120,7 +120,7 @@ vec3 GetShadowTileColor(const in int tile) {
 		float cascadeSize = tileSize * 2.0 + 3.0;
 
 		float zNear = -far;
-		float zFar = far;
+		float zFar = far * 2.0;
 
 		// TESTING: reduce the depth-range for the nearest cascade only
 		//if (tile == 0) zNear = 0.0;
