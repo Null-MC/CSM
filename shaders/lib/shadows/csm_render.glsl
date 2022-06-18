@@ -216,16 +216,7 @@ const float tile_dist_bias_factor = 0.012288;
                     shadow += 1.0 - CompareNearestDepth(blockOffset);
                 }
 
-                //if (sampleCount == 1) return shadow;
-
-                // #if SHADOW_FILTER == 1
-                //     float f = 1.0 - max(geoNoL, 0.0);
-                //     f = clamp(shadow / sampleCount - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
-                //     return clamp(f, 0.0, 1.0);
-                // #else
-                //     return shadow / sampleCount;
-                // #endif
-                return expStep(shadow / sampleCount);
+                return shadow / sampleCount;
             }
         #endif
     #else

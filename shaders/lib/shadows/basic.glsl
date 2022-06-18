@@ -112,7 +112,7 @@ vec3 distort(const in vec3 v) {
                     shadow += 1.0 - CompareDepth(pixelOffset);
                 }
 
-                return expStep(shadow / sampleCount);
+                return shadow / sampleCount;
             }
         #endif
     #else
