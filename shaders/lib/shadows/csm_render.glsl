@@ -78,14 +78,6 @@ const float tile_dist_bias_factor = 0.012288;
 		#endif
 	}
 
-	// float CompareDepth(const in vec2 offset, const in int tile) {
-	// 	#if SHADOW_COLORS == 0
-	// 		return shadow2D(shadowtex0, shadowPos[tile].xyz + offset, refZ).r;
-	// 	#else
-	// 		return shadow2D(shadowtex1, shadowPos[tile].xy + offset, refZ).r;
-	// 	#endif
-	// }
-
 	// float SampleDepth4(const in vec2 offset, const in int tile) {
 	// 	#if SHADOW_COLORS == 0
 	// 		//for normal shadows, only consider the closest thing to the sun,
@@ -122,7 +114,7 @@ const float tile_dist_bias_factor = 0.012288;
 		tile = -1;
 
 		float shadowResScale = tile_dist_bias_factor * shadowPixelSize;
-		float texSize = shadowMapResolution * 0.5;
+		float texSize = shadowMapSize * 0.5;
 
 		float texDepth;
 		for (int i = 0; i < 4; i++) {
@@ -167,6 +159,94 @@ const float tile_dist_bias_factor = 0.012288;
 		return depth;
 	}
 
+    #ifdef SHADOW_ENABLE_HWCOMP
+        // returns: [0] when depth occluded, [1] otherwise
+        float CompareDepth(const in float bias, const in vec2 offset, const in int tile) {
+            return shadow2D(shadow, shadowPos[tile].xyz + vec3(offset, -bias)).r;
+        }
+
+        // returns: [0] when depth occluded, [1] otherwise
+        float CompareNearestDepth(const in vec2 blockOffset) {
+            float shadowResScale = tile_dist_bias_factor * shadowPixelSize;
+            float texSize = shadowMapSize * 0.5;
+
+            float texComp = 1.0;
+            for (int i = 0; i < 4 && texComp > 0.0; i++) {
+                // Ignore if outside tile bounds
+                vec2 shadowTilePos = GetShadowTilePos(i);
+                if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x >= shadowTilePos.x + 0.5) continue;
+                if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y >= shadowTilePos.y + 0.5) continue;
+
+                float bias = cascadeSize[i] * shadowResScale * SHADOW_BIAS_SCALE;
+                bias = min(bias / geoNoL, 0.1);
+                // TODO: BIAS NEEDS TO BE BASED ON DISTANCE
+                // In theory that should help soften the transition between cascades
+
+                // TESTING: reduce the depth-range for the nearest cascade only
+                //if (i == 0) bias *= 0.5;
+
+                vec2 pixelPerBlockScale = (texSize / shadowProjectionSize[i]) * shadowPixelSize;
+                
+                vec2 pixelOffset = blockOffset * pixelPerBlockScale;
+                texComp = min(texComp, CompareDepth(bias, pixelOffset, i));
+
+                // if (texComp > 0.5 && i != shadowTile) {
+                //     vec2 ratio = (shadowProjectionSize[shadowTile] / shadowProjectionSize[i]) * shadowPixelSize;
+
+                //     texComp -= 1.0 - CompareDepth(bias, pixelOffset + vec2(-0.5, -0.5)*ratio, i);
+                //     texComp -= 1.0 - CompareDepth(bias, pixelOffset + vec2( 0.5, -0.5)*ratio, i);
+                //     texComp -= 1.0 - CompareDepth(bias, pixelOffset + vec2(-0.5,  0.5)*ratio, i);
+                //     texComp -= 1.0 - CompareDepth(bias, pixelOffset + vec2( 0.5,  0.5)*ratio, i);
+                // }
+            }
+
+            return max(texComp, 0.0);
+        }
+
+        #if SHADOW_FILTER != 0
+            float GetShadowing_PCF(const in float blockRadius, const in int sampleCount) {
+                float shadow = 0.0;
+                for (int i = 0; i < sampleCount; i++) {
+                    vec2 blockOffset = poissonDisk[i] * blockRadius;
+                    shadow += 1.0 - CompareNearestDepth(blockOffset);
+                }
+
+                if (sampleCount == 1) return shadow;
+
+                #if SHADOW_FILTER == 1
+                    float f = 1.0 - max(geoNoL, 0.0);
+                    f = clamp(shadow / sampleCount - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
+                    return clamp(f, 0.0, 1.0);
+                #else
+                    return expStep(shadow / sampleCount);
+                #endif
+            }
+        #endif
+    #else
+        #if SHADOW_FILTER != 0
+            float GetShadowing_PCF(const in float blockRadius, const in int sampleCount) {
+                int tile;
+                float texDepth;
+                float shadow = 0.0;
+                for (int i = 0; i < sampleCount; i++) {
+                    vec2 blockOffset = poissonDisk[i] * blockRadius;
+                    float texDepth = GetNearestDepth(blockOffset, tile);
+                    shadow += step(texDepth + EPSILON, shadowPos[tile].z);
+                }
+
+                if (sampleCount == 1) return shadow;
+
+                #if SHADOW_FILTER == 1
+                    float f = 1.0 - max(geoNoL, 0.0);
+                    f = clamp(shadow / sampleCount - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
+                    return clamp(f, 0.0, 1.0);
+                #else
+                    return expStep(shadow / sampleCount);
+                #endif
+            }
+        #endif
+    #endif
+
 	#if SHADOW_COLORS == 1
 		vec3 GetShadowColor() {
 			int tile = -1;
@@ -194,29 +274,6 @@ const float tile_dist_bias_factor = 0.012288;
 
 			//make colors more intense when the shadow light color is more opaque.
 			return mix(vec3(1.0), color, shadowLightColor.a);
-		}
-	#endif
-
-	#if SHADOW_FILTER != 0
-		float GetShadowing_PCF(const in float blockRadius, const in int sampleCount) {
-			int tile;
-			float texDepth;
-			float shadow = 0.0;
-			for (int i = 0; i < sampleCount; i++) {
-				vec2 blockOffset = poissonDisk[i] * blockRadius;
-				float texDepth = GetNearestDepth(blockOffset, tile);
-				shadow += step(texDepth + EPSILON, shadowPos[tile].z);
-			}
-
-			if (sampleCount == 1) return shadow;
-
-			#if SHADOW_FILTER == 1
-				float f = 1.0 - max(geoNoL, 0.0);
-				f = clamp(shadow / sampleCount - 0.8*f, 0.0, 1.0) * (1.0 + 1.0 * f);
-				return clamp(f, 0.0, 1.0);
-			#else
-				return expStep(shadow / sampleCount);
-			#endif
 		}
 	#endif
 
@@ -263,7 +320,7 @@ const float tile_dist_bias_factor = 0.012288;
 
 			int pcfSampleCount = POISSON_SAMPLES;
 
-			float texSize = shadowMapResolution * 0.5;
+			float texSize = shadowMapSize * 0.5;
 			vec2 pixelRadius = blockRadius * (texSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
 			if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
 
@@ -274,7 +331,7 @@ const float tile_dist_bias_factor = 0.012288;
 		float GetShadowing() {
 			//float blockRadius = SHADOW_PCF_SIZE;
 
-			float texSize = shadowMapResolution * 0.5;
+			float texSize = shadowMapSize * 0.5;
 			vec2 pixelRadius = SHADOW_PCF_SIZE * (texSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
 
 			int sampleCount = POISSON_SAMPLES;
@@ -285,9 +342,13 @@ const float tile_dist_bias_factor = 0.012288;
 	#elif SHADOW_FILTER == 0
 		// Unfiltered
 		float GetShadowing() {
-			int tile;
-			float texDepth = GetNearestDepth(vec2(0.0), tile);
-			return step(1.0, texDepth + EPSILON);
+            #ifdef SHADOW_ENABLE_HWCOMP
+                return CompareNearestDepth(vec2(0.0));
+            #else
+    			int tile;
+    			float texDepth = GetNearestDepth(vec2(0.0), tile);
+    			return step(1.0, texDepth + EPSILON);
+            #endif
 		}
 	#endif
 #endif

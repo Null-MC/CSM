@@ -42,7 +42,7 @@ vec3 distort(const in vec3 v) {
 				#elif SHADOW_TYPE == 1
 					//shadowPos.z *= 0.5;
 					float range = min(shadowDistance, far * SHADOW_CSM_FIT_FARSCALE);
-					float shadowResScale = range / shadowMapResolution;
+					float shadowResScale = range / shadowMapSize;
 					float bias = SHADOW_BASIC_BIAS * shadowResScale * SHADOW_BIAS_SCALE;
 					shadowPos.z -= min(bias / abs(geoNoL), 0.1); //apply shadow bias
 				#endif
@@ -124,13 +124,13 @@ vec3 distort(const in vec3 v) {
 
 			#if SHADOW_TYPE == 2
 				float distortFactor = getDistortFactor(shadowPos.xy * 2.0 - 1.0);
-				float maxRes = shadowMapResolution / SHADOW_DISTORT_FACTOR;
+				float maxRes = shadowMapSize / SHADOW_DISTORT_FACTOR;
 				//float maxResPixel = 1.0 / maxRes;
 
 				vec2 pixelPerBlockScale = maxRes / shadowProjectionSize;
 				return blockRadius * pixelPerBlockScale * shadowPixelSize * (1.0 - distortFactor);
 			#else
-				vec2 pixelPerBlockScale = shadowMapResolution / shadowProjectionSize;
+				vec2 pixelPerBlockScale = shadowMapSize / shadowProjectionSize;
 				return blockRadius * pixelPerBlockScale * shadowPixelSize;
 			#endif
 		}

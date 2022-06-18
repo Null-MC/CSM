@@ -62,6 +62,10 @@ varying float geoNoL;
 		uniform sampler2D shadowcolor0;
 		uniform sampler2D shadowtex0;
 		uniform sampler2D shadowtex1;
+
+        #ifdef SHADOW_ENABLE_HWCOMP
+            uniform sampler2DShadow shadow;
+        #endif
 		
 		uniform vec3 shadowLightPosition;
 

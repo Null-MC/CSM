@@ -5,15 +5,6 @@ const int shadowtex0Format = R32F;
 const int shadowtex1Format = R32F;
 */
 
-//fix artifacts when colored shadows are enabled
-//const bool generateShadowMipmap = false;
-//const bool shadowcolor0Nearest = false;
-const bool shadowHardwareFiltering = true;
-const bool shadowtex0Mipmap = false;
-const bool shadowtex0Nearest = false;
-const bool shadowtex1Mipmap = false;
-const bool shadowtex1Nearest = false;
-
 const float shadowDistanceRenderMul = 1.0;
 
 
@@ -121,7 +112,7 @@ varying vec4 glcolor;
 
 	void main() {
 		#if SHADOW_TYPE == 3
-			vec2 p = gl_FragCoord.xy / shadowMapResolution - shadowTilePos;
+			vec2 p = gl_FragCoord.xy / shadowMapSize - shadowTilePos;
 
 			if (p.x < 0 || p.x >= 0.5) discard;
 			if (p.y < 0 || p.y >= 0.5) discard;
