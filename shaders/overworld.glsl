@@ -13,16 +13,18 @@ const float shadowPixelSize = 1.0 / shadowMapSize;
 
 
 // FOR HW FILTERING ONLY
-const bool generateShadowMipmap = false;
-const bool shadowHardwareFiltering = true;
-const bool shadowtex0Mipmap = false;
-const bool shadowtex0Nearest = false;
-const bool shadowtex1Mipmap = false;
-const bool shadowtex1Nearest = false;
-// ELSE
-// const bool generateShadowMipmap = false;
-// const bool shadowHardwareFiltering = false;
-// const bool shadowtex0Mipmap = false;
-// const bool shadowtex0Nearest = true;
-// const bool shadowtex1Mipmap = false;
-// const bool shadowtex1Nearest = true;
+#ifdef SHADOW_ENABLE_HWCOMP
+    const bool generateShadowMipmap = false;
+    const bool shadowHardwareFiltering = true;
+    const bool shadowtex0Mipmap = false;
+    const bool shadowtex0Nearest = false;
+    const bool shadowtex1Mipmap = false;
+    const bool shadowtex1Nearest = false;
+#else
+    const bool generateShadowMipmap = false;
+    const bool shadowHardwareFiltering = false;
+    const bool shadowtex0Mipmap = false;
+    const bool shadowtex0Nearest = true;
+    const bool shadowtex1Mipmap = false;
+    const bool shadowtex1Nearest = true;
+#endif
