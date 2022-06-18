@@ -97,44 +97,66 @@ vec3 distort(const in vec3 v) {
 		#endif
 	}
 
-	#if SHADOW_FILTER != 0
-		// PCF
-		float GetShadowing_PCF(const in vec2 pixelRadius, const in int sampleCount) {
-			float texDepth;
-			float shadow = 0.0;
-			for (int i = 0; i < sampleCount; i++) {
-				vec2 pixelOffset = poissonDisk[i] * pixelRadius;
-				float texDepth = SampleDepth(pixelOffset);
-				shadow += step(texDepth + EPSILON, shadowPos.z);
-			}
+    #ifdef SHADOW_ENABLE_HWCOMP
+        // returns: [0] when depth occluded, [1] otherwise
+        float CompareDepth(const in vec2 offset) {
+            return shadow2D(shadow, shadowPos.xyz + vec3(offset, 0.0)).r;
+        }
 
-			if (sampleCount <= 1) return shadow;
+        #if SHADOW_FILTER != 0
+            // PCF
+            float GetShadowing_PCF(const in vec2 pixelRadius, const in int sampleCount) {
+                float shadow = 0.0;
+                for (int i = 0; i < sampleCount; i++) {
+                    vec2 pixelOffset = poissonDisk[i] * pixelRadius;
+                    shadow += 1.0 - CompareDepth(pixelOffset);
+                }
 
-			#if SHADOW_FILTER == 1
-				float f = 1.0 - max(geoNoL, 0.0);
-				f = clamp(shadow / sampleCount - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
-				return clamp(f, 0.0, 1.0);
-			#else
-				return expStep(shadow / sampleCount);
-			#endif
-		}
+                return expStep(shadow / sampleCount);
+            }
+        #endif
+    #else
+        #if SHADOW_FILTER != 0
+            // PCF
+            float GetShadowing_PCF(const in vec2 pixelRadius, const in int sampleCount) {
+                float texDepth;
+                float shadow = 0.0;
+                for (int i = 0; i < sampleCount; i++) {
+                    vec2 pixelOffset = poissonDisk[i] * pixelRadius;
+                    float texDepth = SampleDepth(pixelOffset);
+                    shadow += step(texDepth + EPSILON, shadowPos.z);
+                }
 
-		vec2 GetShadowPixelRadius(const in float blockRadius) {
-			vec2 shadowProjectionSize = 2.0 / vec2(shadowProjection[0].x, shadowProjection[1].y);
+                if (sampleCount <= 1) return shadow;
 
-			#if SHADOW_TYPE == 2
-				float distortFactor = getDistortFactor(shadowPos.xy * 2.0 - 1.0);
-				float maxRes = shadowMapSize / SHADOW_DISTORT_FACTOR;
-				//float maxResPixel = 1.0 / maxRes;
+                #if SHADOW_FILTER == 1
+                    float f = 1.0 - max(geoNoL, 0.0);
+                    f = clamp(shadow / sampleCount - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
+                    return clamp(f, 0.0, 1.0);
+                #else
+                    return expStep(shadow / sampleCount);
+                #endif
+            }
+        #endif
+    #endif
 
-				vec2 pixelPerBlockScale = maxRes / shadowProjectionSize;
-				return blockRadius * pixelPerBlockScale * shadowPixelSize * (1.0 - distortFactor);
-			#else
-				vec2 pixelPerBlockScale = shadowMapSize / shadowProjectionSize;
-				return blockRadius * pixelPerBlockScale * shadowPixelSize;
-			#endif
-		}
-	#endif
+    #if SHADOW_FILTER != 0
+        vec2 GetShadowPixelRadius(const in float blockRadius) {
+            vec2 shadowProjectionSize = 2.0 / vec2(shadowProjection[0].x, shadowProjection[1].y);
+
+            #if SHADOW_TYPE == 2
+                float distortFactor = getDistortFactor(shadowPos.xy * 2.0 - 1.0);
+                float maxRes = shadowMapSize / SHADOW_DISTORT_FACTOR;
+                //float maxResPixel = 1.0 / maxRes;
+
+                vec2 pixelPerBlockScale = maxRes / shadowProjectionSize;
+                return blockRadius * pixelPerBlockScale * shadowPixelSize * (1.0 - distortFactor);
+            #else
+                vec2 pixelPerBlockScale = shadowMapSize / shadowProjectionSize;
+                return blockRadius * pixelPerBlockScale * shadowPixelSize;
+            #endif
+        }
+    #endif
 
 	#if SHADOW_FILTER == 2
 		// PCF + PCSS

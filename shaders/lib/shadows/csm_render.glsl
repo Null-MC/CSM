@@ -159,9 +159,14 @@ const float tile_dist_bias_factor = 0.012288;
 		return depth;
 	}
 
+    vec2 GetPixelRadius(const in vec2 blockRadius) {
+        float texSize = shadowMapSize * 0.5;
+        return blockRadius * (texSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
+    }
+
     #ifdef SHADOW_ENABLE_HWCOMP
         // returns: [0] when depth occluded, [1] otherwise
-        float CompareDepth(const in float bias, const in vec2 offset, const in int tile) {
+        float CompareDepth(const in vec2 offset, const in float bias, const in int tile) {
             return shadow2D(shadow, shadowPos[tile].xyz + vec3(offset, -bias)).r;
         }
 
@@ -188,15 +193,15 @@ const float tile_dist_bias_factor = 0.012288;
                 vec2 pixelPerBlockScale = (texSize / shadowProjectionSize[i]) * shadowPixelSize;
                 
                 vec2 pixelOffset = blockOffset * pixelPerBlockScale;
-                texComp = min(texComp, CompareDepth(bias, pixelOffset, i));
+                texComp = min(texComp, CompareDepth(pixelOffset, bias, i));
 
                 // if (texComp > 0.5 && i != shadowTile) {
                 //     vec2 ratio = (shadowProjectionSize[shadowTile] / shadowProjectionSize[i]) * shadowPixelSize;
 
-                //     texComp -= 1.0 - CompareDepth(bias, pixelOffset + vec2(-0.5, -0.5)*ratio, i);
-                //     texComp -= 1.0 - CompareDepth(bias, pixelOffset + vec2( 0.5, -0.5)*ratio, i);
-                //     texComp -= 1.0 - CompareDepth(bias, pixelOffset + vec2(-0.5,  0.5)*ratio, i);
-                //     texComp -= 1.0 - CompareDepth(bias, pixelOffset + vec2( 0.5,  0.5)*ratio, i);
+                //     texComp -= 1.0 - CompareDepth(pixelOffset + vec2(-0.5, -0.5)*ratio, bias, i);
+                //     texComp -= 1.0 - CompareDepth(pixelOffset + vec2( 0.5, -0.5)*ratio, bias, i);
+                //     texComp -= 1.0 - CompareDepth(pixelOffset + vec2(-0.5,  0.5)*ratio, bias, i);
+                //     texComp -= 1.0 - CompareDepth(pixelOffset + vec2( 0.5,  0.5)*ratio, bias, i);
                 // }
             }
 
@@ -211,7 +216,7 @@ const float tile_dist_bias_factor = 0.012288;
                     shadow += 1.0 - CompareNearestDepth(blockOffset);
                 }
 
-                if (sampleCount == 1) return shadow;
+                //if (sampleCount == 1) return shadow;
 
                 // #if SHADOW_FILTER == 1
                 //     float f = 1.0 - max(geoNoL, 0.0);
@@ -220,7 +225,7 @@ const float tile_dist_bias_factor = 0.012288;
                 // #else
                 //     return shadow / sampleCount;
                 // #endif
-                return shadow / sampleCount;
+                return expStep(shadow / sampleCount);
             }
         #endif
     #else
@@ -319,10 +324,8 @@ const float tile_dist_bias_factor = 0.012288;
 			// percentage-close filtering
 			float blockRadius = clamp(penumbraWidth * 75.0, 0.0, 1.0) * SHADOW_PCF_SIZE; // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
 
-			int pcfSampleCount = POISSON_SAMPLES;
-
-			float texSize = shadowMapSize * 0.5;
-			vec2 pixelRadius = blockRadius * (texSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
+            int pcfSampleCount = POISSON_SAMPLES;
+			vec2 pixelRadius = GetPixelRadius(vec2(blockRadius));
 			if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
 
 			return 1.0 - GetShadowing_PCF(blockRadius, pcfSampleCount);
@@ -330,12 +333,8 @@ const float tile_dist_bias_factor = 0.012288;
 	#elif SHADOW_FILTER == 1
 		// PCF
 		float GetShadowing() {
-			//float blockRadius = SHADOW_PCF_SIZE;
-
-			float texSize = shadowMapSize * 0.5;
-			vec2 pixelRadius = SHADOW_PCF_SIZE * (texSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
-
 			int sampleCount = POISSON_SAMPLES;
+            vec2 pixelRadius = GetPixelRadius(vec2(SHADOW_PCF_SIZE));
 			if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
 
 			return 1.0 - GetShadowing_PCF(SHADOW_PCF_SIZE, sampleCount);
