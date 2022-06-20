@@ -1,3 +1,5 @@
+#extension GL_ARB_gpu_shader5 : enable
+
 #define RENDER_SHADOW
 
 /*
@@ -24,7 +26,12 @@ varying vec4 glcolor;
 	uniform mat4 shadowModelViewInverse;
 	uniform float frameTimeCounter;
 	uniform vec3 cameraPosition;
-	uniform vec3 chunkOffset;
+
+    #if MC_VERSION >= 11700
+        uniform vec3 chunkOffset;
+    #else
+        uniform mat4 gbufferModelViewInverse;
+    #endif
 
 	#include "/lib/waving.glsl"
 
@@ -33,11 +40,14 @@ varying vec4 glcolor;
 		uniform float near;
 		uniform float far;
 
-		// uniform mat4 gbufferModelView;
-		// uniform mat4 gbufferProjection;
-		// NOTE: We are using the previous gbuffer matrices cause the current ones don't work in shadow pass
-		uniform mat4 gbufferPreviousModelView;
-		uniform mat4 gbufferPreviousProjection;
+        #ifdef IS_OPTIFINE
+            // NOTE: We are using the previous gbuffer matrices cause the current ones don't work in shadow pass
+            uniform mat4 gbufferPreviousModelView;
+            uniform mat4 gbufferPreviousProjection;
+        #else
+            uniform mat4 gbufferModelView;
+            uniform mat4 gbufferProjection;
+        #endif
 
 		#include "/lib/shadows/csm.glsl"
 	#elif SHADOW_TYPE != 0
@@ -50,12 +60,12 @@ varying vec4 glcolor;
 		lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 		glcolor = gl_Color;
 
-		#if defined SHADOW_EXCLUDE_ENTITIES
+		#ifdef SHADOW_EXCLUDE_ENTITIES
 			if (mc_Entity.x == 0.0) {
 				gl_Position = vec4(10.0);
 
 				#if SHADOW_TYPE == 3
-					shadowTilePos = vec2(1.0);
+					shadowTilePos = vec2(10.0);
 				#endif
 
 				return;
@@ -67,7 +77,7 @@ varying vec4 glcolor;
 				gl_Position = vec4(10.0);
 
 				#if SHADOW_TYPE == 3
-					shadowTilePos = vec2(1.0);
+					shadowTilePos = vec2(10.0);
 				#endif
 			}
 			else {
@@ -81,12 +91,12 @@ varying vec4 glcolor;
 		#endif
 
 		#if SHADOW_TYPE == 3
-			mat4 matShadowProjection[4];
-			PrepareCascadeMatrices(matShadowProjection);
+			mat4 matShadowProjections[4];
+			PrepareCascadeMatrices(matShadowProjections);
 
-			int shadowTile = GetShadowTile(matShadowProjection);
+			int shadowTile = GetShadowTile(matShadowProjections);
 			shadowTilePos = GetShadowTilePos(shadowTile);
-			gl_Position = matShadowProjection[shadowTile] * (gl_ModelViewMatrix * pos);
+			gl_Position = matShadowProjections[shadowTile] * (gl_ModelViewMatrix * pos);
 
 			gl_Position.xy = gl_Position.xy * 0.5 + 0.5;
 			gl_Position.xy = gl_Position.xy * 0.5 + shadowTilePos;
@@ -113,9 +123,7 @@ varying vec4 glcolor;
 	void main() {
 		#if SHADOW_TYPE == 3
 			vec2 p = gl_FragCoord.xy / shadowMapSize - shadowTilePos;
-
-			if (p.x < 0 || p.x >= 0.5) discard;
-			if (p.y < 0 || p.y >= 0.5) discard;
+			if (p.x < 0 || p.x >= 0.5 || p.y < 0 || p.y >= 0.5) discard;
 		#endif
 
 		vec4 color = texture2D(texture, texcoord) * glcolor;

@@ -172,8 +172,8 @@ const float tile_dist_bias_factor = 0.012288;
 
         // returns: [0] when depth occluded, [1] otherwise
         float CompareNearestDepth(const in vec2 blockOffset) {
-            float shadowResScale = tile_dist_bias_factor * shadowPixelSize;
-            float texSize = shadowMapSize * 0.5;
+            //float shadowResScale = tile_dist_bias_factor * shadowPixelSize;
+            float cascadeTexSize = shadowMapSize * 0.5;
 
             float texComp = 1.0;
             for (int i = 0; i < 4 && texComp > 0.0; i++) {
@@ -182,15 +182,21 @@ const float tile_dist_bias_factor = 0.012288;
                 if (shadowPos[i].x < shadowTilePos.x || shadowPos[i].x >= shadowTilePos.x + 0.5) continue;
                 if (shadowPos[i].y < shadowTilePos.y || shadowPos[i].y >= shadowTilePos.y + 0.5) continue;
 
-                float bias = cascadeSize[i] * shadowResScale * SHADOW_BIAS_SCALE;
-                bias = min(bias / geoNoL, 0.1);
+                //float bias = cascadeSize[i] * shadowResScale * SHADOW_BIAS_SCALE;
+                //bias = min(bias / geoNoL, 0.1);
                 // TODO: BIAS NEEDS TO BE BASED ON DISTANCE
                 // In theory that should help soften the transition between cascades
 
                 // TESTING: reduce the depth-range for the nearest cascade only
                 //if (i == 0) bias *= 0.5;
 
-                vec2 pixelPerBlockScale = (texSize / shadowProjectionSize[i]) * shadowPixelSize;
+                float blocksPerPixelScale = max(shadowProjectionSize[i].x, shadowProjectionSize[i].y) / cascadeTexSize;
+
+                float zRangeBias = 0.00001;
+                float xySizeBias = blocksPerPixelScale * tile_dist_bias_factor;
+                float bias = mix(xySizeBias, zRangeBias, geoNoL) * SHADOW_BIAS_SCALE;
+
+                vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize[i]) * shadowPixelSize;
                 
                 vec2 pixelOffset = blockOffset * pixelPerBlockScale;
                 texComp = min(texComp, CompareDepth(pixelOffset, bias, i));

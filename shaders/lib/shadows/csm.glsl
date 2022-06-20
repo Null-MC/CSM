@@ -8,8 +8,11 @@ const vec3 _shadowTileColors[4] = vec3[](
 
 // tile: 0-3
 vec2 GetShadowTilePos(const in int tile) {
+    if (tile < 0) return vec2(10.0);
+
 	vec2 pos;
-	pos.x = (tile % 2) * 0.5;
+    //pos.x = (tile % 2) * 0.5;
+	pos.x = fract(tile / 2.0);
 	pos.y = floor(float(tile) * 0.5) * 0.5;
 	return pos;
 }
@@ -113,6 +116,22 @@ vec3 GetShadowTileColor(const in int tile) {
 				}
 			}
 		}
+        
+        vec3 GetCascadePaddedFrustumClipBounds(const in mat4 matShadowProjection) {
+            return 1.0 - 1.5 * vec3(
+                matShadowProjection[0].x,
+                matShadowProjection[1].y,
+               -matShadowProjection[2].z);
+        }
+
+        bool IsPosInCascadeProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
+            vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
+            vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection);
+
+            return clipPos.x > -paddedSize.x && clipPos.x < paddedSize.x
+                && clipPos.y > -paddedSize.y && clipPos.y < paddedSize.y
+                && clipPos.z > -paddedSize.z && clipPos.z < paddedSize.z;
+        }
 	#endif
 
 	mat4 GetShadowTileProjectionMatrix(const in int tile) {
@@ -129,12 +148,23 @@ vec3 GetShadowTileColor(const in int tile) {
 
 		#ifdef SHADOW_CSM_TIGHTEN
 			#ifdef RENDER_SHADOW
-				mat4 matSceneProjectionRanged = gbufferPreviousProjection;
-				mat4 matSceneModelView = gbufferPreviousModelView;
+                #ifdef IS_OPTIFINE
+    				mat4 matSceneProjectionRanged = gbufferPreviousProjection;
+    				mat4 matSceneModelView = gbufferPreviousModelView;
+                #else
+                    mat4 matSceneProjectionRanged = gbufferProjection;
+                    mat4 matSceneModelView = gbufferModelView;
+                #endif
+
 				mat4 matShadowModelView = gl_ModelViewMatrix;
 			#else
+                #ifdef IS_OPTIFINE
+                    mat4 matSceneModelView = gbufferPreviousModelView;
+                #else
+                    mat4 matSceneModelView = gbufferModelView;
+                #endif
+
 				mat4 matSceneProjectionRanged = gbufferProjection;
-				mat4 matSceneModelView = gbufferPreviousModelView; //gbufferModelView; FIX for broken OF shadow pass
 				mat4 matShadowModelView = shadowModelView;
 			#endif
 			
@@ -179,31 +209,47 @@ vec3 GetShadowTileColor(const in int tile) {
 	}
 
 	vec3 GetBlockPos() {
-		#ifndef SHADOW_EXCLUDE_ENTITIES
-			#if defined RENDER_TERRAIN || defined RENDER_SHADOW
-				if (mc_Entity.x == 0.0) return vec3(0.0);
-			#elif defined RENDER_ENTITIES
-				return vec3(0.0);
-			#endif
-		#endif
+        #if defined RENDER_ENTITIES || defined RENDER_HAND
+            return vec3(0.0);
+        #elif defined RENDER_TEXTURED
+            vec3 pos = gl_Vertex.xyz;
+            pos = floor(pos + 0.5);
+            pos = (shadowModelView * vec4(pos, 1.0)).xyz;
+            return pos;
+        #else
+            #if defined RENDER_TERRAIN || defined RENDER_SHADOW
+                if (mc_Entity.x == 0.0) return vec3(0.0);
+            #endif
 
-		#ifdef RENDER_SHADOW
-			vec3 midBlockPosition = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
-			vec4 pos = gl_ModelViewMatrix * vec4(midBlockPosition, 1.0);
-		#elif defined RENDER_TERRAIN
-			vec3 midBlockPosition = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
-			vec4 pos = shadowModelView * vec4(midBlockPosition, 1.0);
-		#else
-			vec4 pos = gl_Vertex;
-			pos.xyz = floor(pos.xyz + 0.5);
-			pos = shadowModelView * pos;
-		#endif
+            #if MC_VERSION >= 11700
+                vec3 midBlockPosition = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
 
-		return pos.xyz;
+                #ifdef RENDER_SHADOW
+                    return (gl_ModelViewMatrix * vec4(midBlockPosition, 1.0)).xyz;
+                #elif defined RENDER_TERRAIN
+                    return (shadowModelView * vec4(midBlockPosition, 1.0)).xyz;
+                #endif
+            #else
+                #ifdef RENDER_SHADOW
+                    vec3 midBlockPosition = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));
+                    //midBlockPosition = (gl_ModelViewMatrix * vec4(midBlockPosition, 1.0)).xyz;
+                    //midBlockPosition = (shadowModelViewInverse * vec4(midBlockPosition, 1.0)).xyz;
+                    //midBlockPosition -= gbufferModelViewInverse[3].xyz;
+
+                    return (gl_ModelViewMatrix * vec4(midBlockPosition, 1.0)).xyz;
+                #else
+                    vec3 midBlockPosition = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));
+                    midBlockPosition = (gl_ModelViewMatrix * vec4(midBlockPosition, 1.0)).xyz;
+                    midBlockPosition = mat3(gbufferModelViewInverse) * midBlockPosition;
+
+                    return (shadowModelView * vec4(midBlockPosition, 1.0)).xyz;
+                #endif
+            #endif
+        #endif
 	}
 
 	// returns: tile [0-3] or -1 if excluded
-	int GetShadowTile(const in mat4 matShadowProjection[4]) {
+	int GetShadowTile(const in mat4 matShadowProjections[4]) {
 		vec3 blockPos = GetBlockPos();
 
 		#ifndef SHADOW_EXCLUDE_ENTITIES
@@ -232,18 +278,7 @@ vec3 GetShadowTileColor(const in int tile) {
 
 		for (int i = 0; i < max; i++) {
 			#ifdef SHADOW_CSM_TIGHTEN
-				vec4 clipPos = matShadowProjection[i] * vec4(blockPos, 1.0);
-
-				vec3 blockPadding = 1.5 * vec3(
-					matShadowProjection[i][0].x,
-					matShadowProjection[i][1].y,
-					-matShadowProjection[i][2].z);
-
-				vec3 paddedSize = 1.0 - blockPadding;
-
-				if (clipPos.x > -paddedSize.x && clipPos.x < paddedSize.x
-				 && clipPos.y > -paddedSize.y && clipPos.y < paddedSize.y
-				 && clipPos.z > -paddedSize.z && clipPos.z < paddedSize.z) return i;
+                if (IsPosInCascadeProjection(blockPos, matShadowProjections[i])) return i;
 			#else
 				float size = GetCascadeDistance(i);
 

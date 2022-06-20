@@ -18,7 +18,7 @@
 			vNormal = normalize(gl_NormalMatrix * gl_Normal);
 		#endif
 
-		#ifndef WORLD_END
+		#ifdef SHADOW_ENABLED
 			#ifdef RENDER_TEXTURED
 				geoNoL = 1.0;
 			#else
@@ -32,7 +32,7 @@
 				// #endif
 			#endif
 
-			#if SHADOW_TYPE != 0 && !defined RENDER_SHADOW && !defined WORLD_END
+			#if SHADOW_TYPE != 0 && !defined RENDER_SHADOW && defined SHADOW_ENABLED
 				ApplyShadows(viewPos);
 			#endif
 		#else
@@ -46,7 +46,10 @@
 #ifdef RENDER_FRAG
 	const float shininess = 16.0;
 
-	uniform float alphaTestRef;
+    #if MC_VERSION >= 11700
+    	uniform float alphaTestRef;
+    #endif
+
 	uniform float screenBrightness;
 	uniform vec3 upPosition;
 
@@ -116,7 +119,7 @@
 		float dark = lm.y * SHADOW_BRIGHTNESS * (31.0 / 32.0) + (1.0 / 32.0);
 
 		if (geoNoL >= EPSILON && lm.y > 1.0/32.0) {
-			#if SHADOW_TYPE != 0 && !defined WORLD_END
+			#if SHADOW_TYPE != 0 && defined SHADOW_ENABLED
 				float shadow = GetShadowing();
 
 				#if SHADOW_COLORS == 1

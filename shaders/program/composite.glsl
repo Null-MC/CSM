@@ -1,3 +1,5 @@
+#extension GL_ARB_gpu_shader5 : enable
+
 #define RENDER_COMPOSITE
 
 #if SHADOW_TYPE == 3
@@ -11,14 +13,22 @@ varying vec2 texcoord;
 #if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
 	varying vec3 shadowTileColors[4];
 	varying mat4 matShadowToScene[4];
-	varying vec3 clipMin[4];
-	varying vec3 clipMax[4];
+
+    #ifdef SHADOW_CSM_TIGHTEN
+        varying vec3 clipSize[4];
+    #else
+    	varying vec3 clipMin[4];
+    	varying vec3 clipMax[4];
+    #endif
 #endif
 
 #ifdef RENDER_VERTEX
 	#if SHADOW_TYPE == 3
+        #ifdef IS_OPTIFINE
+            uniform mat4 gbufferPreviousModelView;
+        #endif
+
 		uniform mat4 gbufferModelView;
-		uniform mat4 gbufferPreviousModelView;
 		uniform mat4 gbufferProjection;
 		uniform mat4 shadowProjection;
 		
@@ -46,11 +56,15 @@ varying vec2 texcoord;
 				mat4 matShadowWorldViewProjectionInv = inverse(matShadowProjection * matShadowModelView);
 				matShadowToScene[tile] = matSceneProjectionRanged * gbufferModelView * matShadowWorldViewProjectionInv;
 
-				// project frustum points
-				mat4 matModelViewProjectionInv = inverse(matSceneProjectionRanged * gbufferModelView);
-				mat4 matSceneToShadow = matShadowProjection * matShadowModelView * matModelViewProjectionInv;
+                #ifdef SHADOW_CSM_TIGHTEN
+                    clipSize[tile] = GetCascadePaddedFrustumClipBounds(matShadowProjection);
+                #else
+                    // project frustum points
+                    mat4 matModelViewProjectionInv = inverse(matSceneProjectionRanged * gbufferModelView);
+                    mat4 matSceneToShadow = matShadowProjection * matShadowModelView * matModelViewProjectionInv;
 
-				GetFrustumMinMax(matSceneToShadow, clipMin[tile], clipMax[tile]);
+                    GetFrustumMinMax(matSceneToShadow, clipMin[tile], clipMax[tile]);
+                #endif
 			}
 		#endif
 	}
@@ -91,14 +105,17 @@ varying vec2 texcoord;
 			vec4 sceneClipPos = matShadowToScene[tile] * vec4(clipPos, 1.0);
 			sceneClipPos.xyz /= sceneClipPos.w;
 
-			bool frustum_contained = true;
-			if (sceneClipPos.x < -1.0 || sceneClipPos.x > 1.0) frustum_contained = false;
-			if (sceneClipPos.y < -1.0 || sceneClipPos.y > 1.0) frustum_contained = false;
-			if (sceneClipPos.z < -1.0 || sceneClipPos.z > 1.0) frustum_contained = false;
+			bool frustum_contained = sceneClipPos.x >= -1.0 && sceneClipPos.x <= 1.0
+			                      && sceneClipPos.y >= -1.0 && sceneClipPos.y <= 1.0
+			                      && sceneClipPos.z >= -1.0 && sceneClipPos.z <= 1.0;
 
-			bool bounds_contained = true;
-			if (clipPos.x < clipMin[tile].x || clipPos.x > clipMax[tile].x) bounds_contained = false;
-			if (clipPos.y < clipMin[tile].y || clipPos.y > clipMax[tile].y) bounds_contained = false;
+            #ifdef SHADOW_CSM_TIGHTEN
+                bool bounds_contained = clipPos.x > -clipSize[tile].x && clipPos.x < clipSize[tile].x
+                                     && clipPos.y > -clipSize[tile].y && clipPos.y < clipSize[tile].y;
+            #else
+                bool bounds_contained = clipPos.x > clipMin[tile].x && clipPos.x < clipMax[tile].x
+    			                     && clipPos.y > clipMin[tile].y && clipPos.y < clipMax[tile].y;
+            #endif
 
 			if (frustum_contained && clipPos.z < 1.0) {
 				color *= vec3(1.0, 0.2, 0.2);

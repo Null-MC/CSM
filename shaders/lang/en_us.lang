@@ -110,3 +110,7 @@ value.DEBUG_SHADOW_BUFFER.3=shadowtex1
 
 option.DEBUG_CASCADE_TINT=Tint Cascades
 option.DEBUG_CASCADE_TINT.comment=When enabled, shadow casters will show their cascade level by tint coloring. Applies to CSM only.
+
+
+option.IS_OPTIFINE=Using Optifine?
+option.IS_OPTIFINE.comment=Optifine currently has a bug with the gbuffer matrices in the shadow pass that requires a workaround using the previous-frame matrices. Disable this workaround if you are using Iris.

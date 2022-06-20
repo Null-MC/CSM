@@ -1,4 +1,5 @@
 #define SHADOW_TYPE 3 // [0 1 2 3]
+#define IS_OPTIFINE
 
 // Shadow Options
 //#define SHADOW_EXCLUDE_ENTITIES
@@ -25,6 +26,7 @@
 
 
 // INTERNAL SETTINGS
+#define SHADOW_ENABLED
 #define LIGHTING_TYPE 0 // [0 1 2]
 #define SHADOW_BASIC_BIAS 0.035
 #define SHADOW_DISTORTED_BIAS 0.005
@@ -48,8 +50,18 @@
 // 	#undef SHADOW_CSM_TIGHTEN
 // #endif
 
-#if SHADOW_TYPE == 3 && defined SHADOW_CSM_TIGHTEN && !defined SHADOW_EXCLUDE_ENTITIES
-	#define SHADOW_EXCLUDE_ENTITIES
+#if MC_VERSION < 11700
+    const float alphaTestRef = 0.1;
+    //const vec3 chunkOffset = vec3(0.0);
+#endif
+
+// #if defined IS_OPTIFINE && SHADOW_TYPE == 3 && defined SHADOW_CSM_TIGHTEN && !defined SHADOW_EXCLUDE_ENTITIES
+// 	#define SHADOW_EXCLUDE_ENTITIES
+// #endif
+
+#ifdef SHADOW_EXCLUDE_ENTITIES
+#endif
+#ifdef SHADOW_EXCLUDE_FOLIAGE
 #endif
 
 
