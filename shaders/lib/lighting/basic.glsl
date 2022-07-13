@@ -50,7 +50,6 @@
     	uniform float alphaTestRef;
     #endif
 
-	uniform float screenBrightness;
 	uniform vec3 upPosition;
 
 	uniform int fogMode;
@@ -62,7 +61,7 @@
 
 
 	vec4 ApplyLighting(const in vec4 albedo, const in vec3 lightColor, const in vec2 lm) {
-		vec3 lmValue = texture2D(lightmap, lm).rgb * screenBrightness;
+		vec3 lmValue = texture2D(lightmap, lm).rgb;
 		lmValue = RGBToLinear(lmValue);
 		vec4 final = albedo;
 
