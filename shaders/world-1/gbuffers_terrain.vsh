@@ -1,8 +1,9 @@
 #version 120
 
-#define RENDER_VERTEX
 #define WORLD_NETHER
+#define RENDER_TERRAIN
+#define RENDER_VERTEX
 
-#include "/lib/common.glsl"
 #include "nether.glsl"
-#include "/program/gbuffers_terrain.glsl"
+#include "/lib/common.glsl"
+#include "/program/gbuffers_terrain.vsh"

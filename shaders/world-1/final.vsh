@@ -1,8 +1,9 @@
 #version 120
 
-#define RENDER_VERTEX
 #define WORLD_NETHER
+#define RENDER_FINAL
+#define RENDER_VERTEX
 
-#include "/lib/common.glsl"
 #include "nether.glsl"
-#include "/program/final.glsl"
+#include "/lib/common.glsl"
+#include "/program/final.vsh"

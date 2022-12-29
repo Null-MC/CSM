@@ -2,8 +2,8 @@
 
 #define WORLD_OVERWORLD
 #define RENDER_SHADOW
-#define RENDER_VERTEX
+#define RENDER_GEOMETRY
 
 #include "overworld.glsl"
 #include "/lib/common.glsl"
-#include "/program/shadow.vsh"
+#include "/program/shadow.gsh"

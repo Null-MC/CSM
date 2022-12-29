@@ -1,3 +1,10 @@
+/*
+const int shadowtex0Format = R32F;
+const int shadowtex1Format = R32F;
+*/
+
+const float shadowDistanceRenderMul = 1.0;
+
 const float shadowDistance = 150; // [50 100 150 200 300 400 800]
 const int shadowMapResolution = 2048; // [128 256 512 1024 2048 4096 8192]
 

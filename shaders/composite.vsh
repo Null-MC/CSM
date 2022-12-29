@@ -1,8 +1,11 @@
 #version 120
 
-#define RENDER_VERTEX
-#define WORLD_OVERWORLD
+//#extension GL_ARB_gpu_shader5 : enable
 
-#include "lib/common.glsl"
+#define WORLD_OVERWORLD
+#define RENDER_COMPOSITE
+#define RENDER_VERTEX
+
 #include "overworld.glsl"
-#include "program/composite.glsl"
+#include "/lib/common.glsl"
+#include "/program/composite.vsh"
