@@ -29,13 +29,13 @@ float SampleDepth(const in vec2 offset, const in int tile) {
 }
 
 vec2 GetPixelRadius(const in vec2 blockRadius) {
-    float texSize = shadowMapSize * 0.5;
+    const float texSize = shadowMapSize * 0.5;
     return blockRadius * (texSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
 }
 
 int GetShadowCascade(const in float blockRadius) {
     for (int i = 0; i < 4; i++) {
-        vec2 padding = vec2(0.0);//blockRadius / shadowProjectionSize[tile];
+        vec2 padding = blockRadius / shadowProjectionSize[i];
 
         // Ignore if outside tile bounds
         vec2 shadowTilePos = GetShadowTilePos(i);
