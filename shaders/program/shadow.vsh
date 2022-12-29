@@ -17,7 +17,7 @@ uniform float frameTimeCounter;
 uniform vec3 cameraPosition;
 uniform int renderStage;
 
-#if MC_VERSION >= 11700
+#if MC_VERSION >= 11700 && defined IS_OPTIFINE
     uniform vec3 chunkOffset;
 #else
     uniform mat4 gbufferModelViewInverse;
@@ -52,7 +52,13 @@ void main() {
 	int blockId = int(mc_Entity.x + 0.5);
 
 	#if SHADOW_TYPE == 3
-		vOriginPos = GetBlockPos();
+        #if MC_VERSION >= 11700 && defined IS_OPTIFINE
+            vOriginPos = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
+        #else
+            vOriginPos = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));
+        #endif
+
+    	vOriginPos = (gl_ModelViewMatrix * vec4(vOriginPos, 1.0)).xyz;
 
 	    if (renderStage == MC_RENDER_STAGE_ENTITIES) {
 			vEntityId = entityId;

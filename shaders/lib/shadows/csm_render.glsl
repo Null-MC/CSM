@@ -14,9 +14,14 @@ const float tile_dist_bias_factor = 0.012288;
 		if (geoNoL > 0.0) {
 			// vertex is facing towards the sun
 			mat4 matShadowProjection[4];
-			PrepareCascadeMatrices(matShadowProjection);
+			matShadowProjection[0] = GetShadowTileProjectionMatrix(0);
+			matShadowProjection[1] = GetShadowTileProjectionMatrix(1);
+			matShadowProjection[2] = GetShadowTileProjectionMatrix(2);
+			matShadowProjection[3] = GetShadowTileProjectionMatrix(3);
 
-			vec4 shadowViewPos = shadowModelView * (gbufferModelViewInverse * viewPos);
+			mat4 matViewToShadowView = shadowModelView * gbufferModelViewInverse;
+
+			vec4 shadowViewPos = matViewToShadowView * viewPos;
 
 			for (int i = 0; i < 4; i++) {
 				shadowProjectionSize[i] = 2.0 / vec2(
@@ -37,7 +42,27 @@ const float tile_dist_bias_factor = 0.012288;
 				shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowTilePos; // scale and translate to quadrant
 			}
 
-			shadowTile = GetShadowTile(matShadowProjection);
+	        #if defined RENDER_ENTITIES || defined RENDER_HAND
+	            vec3 blockPos = vec3(0.0);
+	        #elif defined RENDER_TEXTURED
+	            vec3 blockPos = gl_Vertex.xyz;
+	            blockPos = floor(blockPos + 0.5);
+	            blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
+	        #else
+	            #if MC_VERSION >= 11700 && defined IS_OPTIFINE
+	                vec3 blockPos = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
+
+	                #if defined RENDER_TERRAIN
+	                    blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
+	                #endif
+	            #else
+                    vec3 blockPos = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));
+                	blockPos = (gl_ModelViewMatrix * vec4(blockPos, 1.0)).xyz;
+                    blockPos = (matViewToShadowView * vec4(blockPos, 1.0)).xyz;
+	            #endif
+	        #endif
+
+			shadowTile = GetShadowTile(matShadowProjection, blockPos);
 
 			#if defined DEBUG_CASCADE_TINT && !defined RENDER_TEXTURED
 				shadowTileColor = GetShadowTileColor(shadowTile);
@@ -76,37 +101,6 @@ const float tile_dist_bias_factor = 0.012288;
 			return texture2D(shadowtex1, shadowPos[tile].xy + offset).r;
 		#endif
 	}
-
-	// float SampleDepth4(const in vec2 offset, const in int tile) {
-	// 	#if SHADOW_COLORS == 0
-	// 		//for normal shadows, only consider the closest thing to the sun,
-	// 		//regardless of whether or not it's opaque.
-	// 		vec4 samples = textureGather(shadowtex0, shadowPos[tile].xy + offset);
-	// 	#else
-	// 		//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
-	// 		vec4 samples = textureGather(shadowtex1, shadowPos[tile].xy + offset);
-	// 	#endif
-
-	// 	float result = samples[0];
-	// 	for (int i = 1; i < 4; i++)
-	// 		result = min(result, samples[i]);
-
-	// 	return result;
-	// }
-
-	// float CompareDepth4(const in vec2 offset, const in float z, const in int tile) {
-	// 	#if SHADOW_COLORS == 0
-	// 		vec4 samples = textureGather(shadowtex0, shadowPos[tile].xy + offset, shadowPos[tile].z);
-	// 	#else
-	// 		vec4 samples = textureGather(shadowtex1, shadowPos[tile].xy + offset, shadowPos[tile].z);
-	// 	#endif
-
-	// 	float result = samples[0];
-	// 	for (int i = 1; i < 4; i++)
-	// 		if (samples[i] < z) return 1.0;
-
-	// 	return 0.0;
-	// }
 
 	float GetNearestDepth(const in vec2 blockOffset, out int tile) {
 		tile = -1;

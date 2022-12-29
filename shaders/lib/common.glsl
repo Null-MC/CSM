@@ -78,3 +78,7 @@ float expStep(float x)
 {
     return 1.0 - exp(-x*x);
 }
+
+vec3 unproject(const in vec4 pos) {
+    return pos.xyz / pos.w;
+}

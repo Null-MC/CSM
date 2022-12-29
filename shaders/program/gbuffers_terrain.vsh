@@ -24,7 +24,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform float frameTimeCounter;
 uniform vec3 cameraPosition;
 
-#if MC_VERSION >= 11700
+#if MC_VERSION >= 11700 && defined IS_OPTIFINE
 	uniform vec3 chunkOffset;
 #endif
 
