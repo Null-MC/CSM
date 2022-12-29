@@ -74,13 +74,6 @@ option.SHADOW_CSM_FITRANGE.comment=When enabled, all but the nearest cascade wil
 option.SHADOW_CSM_TIGHTEN=Fit CSM to Frustum
 option.SHADOW_CSM_TIGHTEN.comment=When enabled, the shadows cascades will be tightly fit to the view frustum to improve quality. Applies to CSM only. NOTE: disables entity shadows because Optifine bugs!
 
-option.SHADOW_ENTITY_CASCADE=Entity Cascade
-option.SHADOW_ENTITY_CASCADE.comment=The fixed cascade level for rendering entity shadows. Applies to CSM only.
-value.SHADOW_ENTITY_CASCADE.0=1
-value.SHADOW_ENTITY_CASCADE.1=2
-value.SHADOW_ENTITY_CASCADE.2=3
-value.SHADOW_ENTITY_CASCADE.3=4
-
 option.SHADOW_PCF_SIZE=PCF Radius
 option.SHADOW_PCF_SIZE.comment=The radius of the shadow blurring using a block-sized scale.
 

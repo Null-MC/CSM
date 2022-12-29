@@ -108,7 +108,7 @@ vec3 distort(const in vec3 v) {
             float GetShadowing_PCF(const in vec2 pixelRadius, const in int sampleCount) {
                 float shadow = 0.0;
                 for (int i = 0; i < sampleCount; i++) {
-                    vec2 pixelOffset = poissonDisk[i] * pixelRadius;
+                    vec2 pixelOffset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
                     shadow += 1.0 - CompareDepth(pixelOffset);
                 }
 
@@ -122,7 +122,7 @@ vec3 distort(const in vec3 v) {
                 float texDepth;
                 float shadow = 0.0;
                 for (int i = 0; i < sampleCount; i++) {
-                    vec2 pixelOffset = poissonDisk[i] * pixelRadius;
+                    vec2 pixelOffset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
                     float texDepth = SampleDepth(pixelOffset);
                     shadow += step(texDepth + EPSILON, shadowPos.z);
                 }
@@ -171,7 +171,7 @@ vec3 distort(const in vec3 v) {
 			int blockers = 0;
 
 			for (int i = 0; i < sampleCount; i++) {
-				vec2 offset = poissonDisk[i] * pixelRadius;
+				vec2 offset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
 				float texDepth = SampleDepth(offset);
 
 				if (texDepth < shadowPos.z) { // - directionalLightShadowMapBias
@@ -198,7 +198,7 @@ vec3 distort(const in vec3 v) {
 			// percentage-close filtering
 			pixelRadius *= min(penumbraWidth * 40.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
 
-			int pcfSampleCount = POISSON_SAMPLES;
+			int pcfSampleCount = SHADOW_PCF_SAMPLES;
 			if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
 			return 1.0 - GetShadowing_PCF(pixelRadius, pcfSampleCount);
 		}
@@ -207,7 +207,7 @@ vec3 distort(const in vec3 v) {
 		float GetShadowing() {
 			vec2 pixelRadius = GetShadowPixelRadius(SHADOW_PCF_SIZE);
 
-			int sampleCount = POISSON_SAMPLES;
+			int sampleCount = SHADOW_PCF_SAMPLES;
 			if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
 			return 1.0 - GetShadowing_PCF(pixelRadius, sampleCount);
 		}
