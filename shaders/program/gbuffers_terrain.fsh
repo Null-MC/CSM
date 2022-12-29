@@ -15,7 +15,6 @@ varying float geoNoL;
 	#endif
 #endif
 
-
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 
@@ -30,6 +29,14 @@ uniform sampler2D lightmap;
 	
 	uniform vec3 shadowLightPosition;
 
+	#if SHADOW_TYPE != 0
+		uniform mat4 shadowProjection;
+	#endif
+#endif
+
+#include "/lib/noise.glsl"
+
+#ifdef SHADOW_ENABLED
 	#if SHADOW_PCF_SAMPLES == 12
 		#include "/lib/shadows/poisson_12.glsl"
 	#elif SHADOW_PCF_SAMPLES == 24
@@ -42,8 +49,6 @@ uniform sampler2D lightmap;
 		#include "/lib/shadows/csm.glsl"
 		#include "/lib/shadows/csm_render.glsl"
 	#elif SHADOW_TYPE != 0
-		uniform mat4 shadowProjection;
-
 		#include "/lib/shadows/basic.glsl"
 	#endif
 #endif
@@ -51,7 +56,6 @@ uniform sampler2D lightmap;
 #include "/lib/lighting/basic.glsl"
 
 
-/* DRAWBUFFERS:0 */
 void main() {
 	vec4 color = BasicLighting();
 
@@ -63,5 +67,6 @@ void main() {
 
 	color.rgb = LinearToRGB(color.rgb);
 
+	/* DRAWBUFFERS:0 */
 	gl_FragData[0] = color;
 }

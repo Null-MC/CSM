@@ -174,7 +174,7 @@ const float tile_dist_bias_factor = 0.012288;
         	int tile;
             float shadow = 0.0;
             for (int i = 0; i < sampleCount; i++) {
-                vec2 blockOffset = poissonDisk[i] * blockRadius;
+                vec2 blockOffset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * blockRadius;
 
                 #ifdef SHADOW_ENABLE_HWCOMP
 	                shadow += 1.0 - CompareNearestDepth(blockOffset, tile);

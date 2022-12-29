@@ -28,6 +28,14 @@ uniform sampler2D lightmap;
 	
 	uniform vec3 shadowLightPosition;
 
+	#if SHADOW_TYPE != 0
+		uniform mat4 shadowProjection;
+	#endif
+#endif
+
+#include "/lib/noise.glsl"
+
+#ifdef SHADOW_ENABLED
 	#if SHADOW_PCF_SAMPLES == 12
 		#include "/lib/shadows/poisson_12.glsl"
 	#elif SHADOW_PCF_SAMPLES == 24
@@ -40,8 +48,6 @@ uniform sampler2D lightmap;
 		#include "/lib/shadows/csm.glsl"
 		#include "/lib/shadows/csm_render.glsl"
 	#elif SHADOW_TYPE != 0
-		uniform mat4 shadowProjection;
-	
 		#include "/lib/shadows/basic.glsl"
 	#endif
 #endif
