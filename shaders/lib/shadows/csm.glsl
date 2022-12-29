@@ -204,3 +204,86 @@ vec3 GetShadowTileColor(const in int tile) {
 		#endif
 	}
 #endif
+
+#if defined RENDER_VERTEX && !defined RENDER_COMPOSITE
+    void ApplyShadows(const in vec4 viewPos) {
+        #ifndef RENDER_TEXTURED
+            shadowTileColor = vec3(1.0);
+        #endif
+
+        if (geoNoL > 0.0) {
+            // vertex is facing towards the sun
+            mat4 matShadowProjection[4];
+            matShadowProjection[0] = GetShadowTileProjectionMatrix(0);
+            matShadowProjection[1] = GetShadowTileProjectionMatrix(1);
+            matShadowProjection[2] = GetShadowTileProjectionMatrix(2);
+            matShadowProjection[3] = GetShadowTileProjectionMatrix(3);
+
+            mat4 matViewToShadowView = shadowModelView * gbufferModelViewInverse;
+
+            vec4 shadowViewPos = matViewToShadowView * viewPos;
+
+            for (int i = 0; i < 4; i++) {
+                shadowProjectionSize[i] = 2.0 / vec2(
+                    matShadowProjection[i][0].x,
+                    matShadowProjection[i][1].y);
+
+                cascadeSize[i] = GetCascadeDistance(i);
+                
+                // convert to shadow screen space
+                #ifdef RENDER_TEXTURED
+                    shadowPos[i] = (matShadowProjection[i] * shadowViewPos).xyz;
+                #else
+                    shadowPos[i] = matShadowProjection[i] * shadowViewPos;
+                #endif
+
+                vec2 shadowTilePos = GetShadowTilePos(i);
+                shadowPos[i].xyz = shadowPos[i].xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
+                shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowTilePos; // scale and translate to quadrant
+            }
+
+            #if defined RENDER_ENTITIES || defined RENDER_HAND
+                vec3 blockPos = vec3(0.0);
+            #elif defined RENDER_TEXTURED
+                vec3 blockPos = gl_Vertex.xyz;
+                blockPos = floor(blockPos + 0.5);
+                blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
+            #else
+                #if MC_VERSION >= 11700 && defined IS_OPTIFINE
+                    vec3 blockPos = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
+
+                    #if defined RENDER_TERRAIN
+                        blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
+                    #endif
+                #else
+                    vec3 blockPos = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));
+                    blockPos = (gl_ModelViewMatrix * vec4(blockPos, 1.0)).xyz;
+                    blockPos = (matViewToShadowView * vec4(blockPos, 1.0)).xyz;
+                #endif
+            #endif
+
+            shadowTile = GetShadowTile(matShadowProjection, blockPos);
+
+            #if defined DEBUG_CASCADE_TINT && !defined RENDER_TEXTURED
+                shadowTileColor = GetShadowTileColor(shadowTile);
+            #endif
+        }
+        else {
+            // vertex is facing away from the sun
+            // mark that this vertex does not need to check the shadow map.
+            shadowTile = -1;
+
+            #ifdef RENDER_TEXTURED
+                shadowPos[0] = vec3(0.0);
+                shadowPos[1] = vec3(0.0);
+                shadowPos[2] = vec3(0.0);
+                shadowPos[3] = vec3(0.0);
+            #else
+                shadowPos[0] = vec4(0.0);
+                shadowPos[1] = vec4(0.0);
+                shadowPos[2] = vec4(0.0);
+                shadowPos[3] = vec4(0.0);
+            #endif
+        }
+    }
+#endif

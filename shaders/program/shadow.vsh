@@ -23,8 +23,6 @@ uniform int renderStage;
     uniform mat4 gbufferModelViewInverse;
 #endif
 
-#include "/lib/waving.glsl"
-
 #if SHADOW_TYPE == 3
 	uniform int entityId;
 	uniform float near;
@@ -38,10 +36,10 @@ uniform int renderStage;
         uniform mat4 gbufferModelView;
         uniform mat4 gbufferProjection;
     #endif
+#endif
 
-	#include "/lib/shadows/csm.glsl"
-#elif SHADOW_TYPE != 0
-	#include "/lib/shadows/basic.glsl"
+#ifdef ENABLE_WAVING
+	#include "/lib/waving.glsl"
 #endif
 
 

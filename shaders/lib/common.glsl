@@ -14,7 +14,7 @@
 #define SHADOW_FILTER 0 // [0 1 2]
 #define SHADOW_PCF_SIZE 0.015 // [0.005 0.010 0.015 0.020 0.025 0.030 0.035 0.040 0.045 0.050 0.055 0.060 0.065 0.070 0.075 0.080 0.085 0.090 0.095 0.100]
 #define SHADOW_PCF_SAMPLES 8 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
-#define SHADOW_ENABLE_HWCOMP
+//#define SHADOW_ENABLE_HWCOMP
 
 // World Options
 #define ENABLE_WAVING
@@ -64,6 +64,10 @@
 #ifdef SHADOW_EXCLUDE_FOLIAGE
 #endif
 
+
+float saturate(const in float x) {return clamp(x, 0.0, 1.0);}
+vec2 saturate(const in vec2 x) {return clamp(x, vec2(0.0), vec2(1.0));}
+vec3 saturate(const in vec3 x) {return clamp(x, vec3(0.0), vec3(1.0));}
 
 vec3 RGBToLinear(const in vec3 color) {
 	return pow(color, vec3(GAMMA));

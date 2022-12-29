@@ -8,8 +8,10 @@ varying float geoNoL;
 #ifdef SHADOW_ENABLED
 	#if SHADOW_TYPE == 3
 		varying vec4 shadowPos[4];
+		flat varying vec2 shadowProjectionSize[4];
+		flat varying int shadowTile;
 		flat varying vec3 shadowTileColor;
-		varying vec2 shadowProjectionSize[4];
+		flat varying float cascadeSize[4];
 	#elif SHADOW_TYPE != 0
 		varying vec4 shadowPos;
 	#endif
@@ -37,13 +39,12 @@ uniform mat4 gbufferModelViewInverse;
 		uniform float near;
 
 		#include "/lib/shadows/csm.glsl"
-		#include "/lib/shadows/csm_render.glsl"
 	#elif SHADOW_TYPE != 0
 		#include "/lib/shadows/basic.glsl"
 	#endif
 #endif
 
-#include "/lib/lighting/basic.glsl"
+#include "/lib/lighting.glsl"
 
 
 void main() {
