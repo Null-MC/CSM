@@ -5,15 +5,14 @@ varying vec3 vPos;
 varying vec3 vNormal;
 varying float geoNoL;
 
-#ifdef SHADOW_ENABLED
+#if defined SHADOW_ENABLED && SHADOW_TYPE != 0
+    varying vec3 shadowPos;
+
     #if SHADOW_TYPE == 3
-        varying vec3 shadowPos[4]; //normals don't exist for particles
-        flat varying vec2 shadowProjectionSize[4];
         flat varying int shadowTile;
         //flat varying vec3 shadowTileColor;
-        flat varying float cascadeSize[4];
-    #elif SHADOW_TYPE != 0
-        varying vec3 shadowPos; //normals don't exist for particles
+        //flat varying float cascadeSize[4];
+        flat varying vec2 shadowProjectionSize[4];
     #endif
 #endif
 

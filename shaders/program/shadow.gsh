@@ -78,7 +78,7 @@ void main() {
 			if (c != shadowTile) {
 				#ifdef SHADOW_CSM_OVERLAP
 					// duplicate geometry if intersecting overlapping cascades
-					if (!CascadeIntersectsProjection(vOriginPos[0], matShadowProjections[c])) continue;
+					if (!CascadeIntersectsPosition(vOriginPos[0], matShadowProjections[c])) continue;
 				#else
 					continue;
 				#endif

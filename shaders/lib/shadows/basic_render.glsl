@@ -18,18 +18,10 @@ float SampleDepth(const in vec2 offset) {
 	#if SHADOW_COLORS == 0
 		//for normal shadows, only consider the closest thing to the sun,
 		//regardless of whether or not it's opaque.
-		#ifdef RENDER_TEXTURED
-			return texture2D(shadowtex0, shadowPos.xy + offset).r;
-		#else
-			return texture2DProj(shadowtex0, vec4(shadowPos.xy + offset * shadowPos.w, shadowPos.z, shadowPos.w)).r;
-		#endif
+		return texture2D(shadowtex0, shadowPos.xy + offset).r;
 	#else
 		//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
-		#ifdef RENDER_TEXTURED
-			return texture2D(shadowtex1, shadowPos.xy + offset).r;
-		#else
-			return texture2DProj(shadowtex1, vec4(shadowPos.xy + offset * shadowPos.w, shadowPos.z, shadowPos.w)).r;
-		#endif
+		return texture2D(shadowtex1, shadowPos.xy + offset).r;
 	#endif
 }
 
@@ -63,15 +55,16 @@ float SampleDepth(const in vec2 offset) {
                 shadow += step(texDepth + EPSILON, shadowPos.z);
             }
 
-            if (sampleCount <= 1) return shadow;
+            //if (sampleCount <= 1) return shadow;
+            return shadow / sampleCount;
 
-            #if SHADOW_FILTER == 1
-                float f = 1.0 - max(geoNoL, 0.0);
-                f = clamp(shadow / sampleCount - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
-                return clamp(f, 0.0, 1.0);
-            #else
-                return expStep(shadow / sampleCount);
-            #endif
+            // #if SHADOW_FILTER == 1
+            //     float f = 1.0 - max(geoNoL, 0.0);
+            //     f = clamp(shadow / sampleCount - 0.7*f, 0.0, 1.0) * (1.0 + (1.0/0.3) * f);
+            //     return clamp(f, 0.0, 1.0);
+            // #else
+            //     return expStep(shadow / sampleCount);
+            // #endif
         }
     #endif
 #endif

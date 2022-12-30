@@ -102,7 +102,7 @@ vec3 GetShadowTileColor(const in int tile) {
                -matShadowProjection[2].z);
         }
 
-        bool CascadeContainsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
+        bool CascadeContainsPosition(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
             vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
             vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection, -1.5);
 
@@ -111,7 +111,7 @@ vec3 GetShadowTileColor(const in int tile) {
                 && clipPos.z > -paddedSize.z && clipPos.z < paddedSize.z;
         }
 
-        bool CascadeIntersectsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
+        bool CascadeIntersectsPosition(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
             vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
             vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection, 1.5);
 
@@ -190,7 +190,7 @@ vec3 GetShadowTileColor(const in int tile) {
 
 		for (int i = 0; i < max; i++) {
 			#ifdef SHADOW_CSM_TIGHTEN
-                if (CascadeContainsProjection(blockPos, matShadowProjections[i])) return i;
+                if (CascadeContainsPosition(blockPos, matShadowProjections[i])) return i;
 			#else
 				float size = GetCascadeDistance(i);
 				if (blockPos.xy == clamp(blockPos.xy, -size, size)) return i;
@@ -212,35 +212,7 @@ vec3 GetShadowTileColor(const in int tile) {
         #endif
 
         if (geoNoL > 0.0) {
-            // vertex is facing towards the sun
-            mat4 matShadowProjection[4];
-            matShadowProjection[0] = GetShadowTileProjectionMatrix(0);
-            matShadowProjection[1] = GetShadowTileProjectionMatrix(1);
-            matShadowProjection[2] = GetShadowTileProjectionMatrix(2);
-            matShadowProjection[3] = GetShadowTileProjectionMatrix(3);
-
             mat4 matViewToShadowView = shadowModelView * gbufferModelViewInverse;
-
-            vec4 shadowViewPos = matViewToShadowView * viewPos;
-
-            for (int i = 0; i < 4; i++) {
-                shadowProjectionSize[i] = 2.0 / vec2(
-                    matShadowProjection[i][0].x,
-                    matShadowProjection[i][1].y);
-
-                cascadeSize[i] = GetCascadeDistance(i);
-                
-                // convert to shadow screen space
-                #ifdef RENDER_TEXTURED
-                    shadowPos[i] = (matShadowProjection[i] * shadowViewPos).xyz;
-                #else
-                    shadowPos[i] = matShadowProjection[i] * shadowViewPos;
-                #endif
-
-                vec2 shadowTilePos = GetShadowTilePos(i);
-                shadowPos[i].xyz = shadowPos[i].xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
-                shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowTilePos; // scale and translate to quadrant
-            }
 
             #if defined RENDER_ENTITIES || defined RENDER_HAND
                 vec3 blockPos = vec3(0.0);
@@ -262,28 +234,57 @@ vec3 GetShadowTileColor(const in int tile) {
                 #endif
             #endif
 
+            // vertex is facing towards the sun
+            mat4 matShadowProjection[4];
+            // matShadowProjection[0] = GetShadowTileProjectionMatrix(0);
+            // matShadowProjection[1] = GetShadowTileProjectionMatrix(1);
+            // matShadowProjection[2] = GetShadowTileProjectionMatrix(2);
+            // matShadowProjection[3] = GetShadowTileProjectionMatrix(3);
+
+            // vec3 shadowPos[4];
+            for (int i = 0; i < 4; i++) {
+	            matShadowProjection[i] = GetShadowTileProjectionMatrix(i);
+
+                shadowProjectionSize[i] = 2.0 / vec2(
+                    matShadowProjection[i][0].x,
+                    matShadowProjection[i][1].y);
+
+            //     cascadeSize[i] = GetCascadeDistance(i);
+                
+            //     if (CascadeContainsPosition(shadowViewPos, matShadowProjection[i])) {
+            //     	// TODO
+            //     }
+
+            //     // convert to shadow screen space
+            //     #ifdef RENDER_TEXTURED
+            //         shadowPos[i] = (matShadowProjection[i] * shadowViewPos).xyz;
+            //     #else
+            //         shadowPos[i] = matShadowProjection[i] * shadowViewPos;
+            //     #endif
+
+            //     vec2 shadowTilePos = GetShadowTilePos(i);
+            //     shadowPos[i].xyz = shadowPos[i].xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
+            //     shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowTilePos; // scale and translate to quadrant
+            }
+
             shadowTile = GetShadowTile(matShadowProjection, blockPos);
 
             #if defined DEBUG_CASCADE_TINT && !defined RENDER_TEXTURED
                 shadowTileColor = GetShadowTileColor(shadowTile);
             #endif
+
+            vec3 shadowViewPos = (matViewToShadowView * viewPos).xyz;
+            shadowPos = (matShadowProjection[shadowTile] * vec4(shadowViewPos, 1.0)).xyz;
+
+            vec2 shadowTilePos = GetShadowTilePos(shadowTile);
+            shadowPos.xyz = shadowPos.xyz * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
+            shadowPos.xy = shadowPos.xy * 0.5 + shadowTilePos; // scale and translate to quadrant
         }
         else {
             // vertex is facing away from the sun
             // mark that this vertex does not need to check the shadow map.
             shadowTile = -1;
-
-            #ifdef RENDER_TEXTURED
-                shadowPos[0] = vec3(0.0);
-                shadowPos[1] = vec3(0.0);
-                shadowPos[2] = vec3(0.0);
-                shadowPos[3] = vec3(0.0);
-            #else
-                shadowPos[0] = vec4(0.0);
-                shadowPos[1] = vec4(0.0);
-                shadowPos[2] = vec4(0.0);
-                shadowPos[3] = vec4(0.0);
-            #endif
+            shadowPos = vec3(0.0);
         }
     }
 #endif
