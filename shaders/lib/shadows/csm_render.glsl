@@ -7,9 +7,9 @@ const int pcf_sizes[4] = int[](4, 3, 2, 1);
 const int pcf_max = 4;
 
 
-float GetShadowBias(const in int tile, const in float geoNoL) {
+float GetShadowBias(const in float geoNoL) {
     const float cascadeTexSize = shadowMapSize * 0.5;
-    float blocksPerPixelScale = max(shadowProjectionSize[tile].x, shadowProjectionSize[tile].y) / cascadeTexSize;
+    float blocksPerPixelScale = max(shadowProjectionSize.x, shadowProjectionSize.y) / cascadeTexSize;
 
     float zRangeBias = 0.0000001;
     float xySizeBias = blocksPerPixelScale * tile_dist_bias_factor;
@@ -30,7 +30,7 @@ float SampleDepth(const in vec2 offset) {
 
 vec2 GetPixelRadius(const in vec2 blockRadius) {
     const float texSize = shadowMapSize * 0.5;
-    return blockRadius * (texSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
+    return blockRadius * (texSize / shadowProjectionSize) * shadowPixelSize;
 }
 
 // int GetShadowCascade(const in vec3 shadowPos[4], const in vec2 shadowProjectionSize[4], const in float blockRadius) {
@@ -62,9 +62,9 @@ vec2 GetPixelRadius(const in vec2 blockRadius) {
 #if SHADOW_FILTER != 0
     float GetShadowing_PCF(const in float blockRadius, const in int sampleCount) {
         float cascadeTexSize = shadowMapSize * 0.5;
-        vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
+        vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize) * shadowPixelSize;
 
-        float bias = GetShadowBias(shadowTile, geoNoL);
+        float bias = GetShadowBias(geoNoL);
 
         float shadow = 0.0;
         for (int i = 0; i < sampleCount; i++) {
@@ -111,9 +111,9 @@ vec2 GetPixelRadius(const in vec2 blockRadius) {
 
     float FindBlockerDistance(const in float blockRadius, const in int sampleCount) {
         float cascadeTexSize = shadowMapSize * 0.5;
-        vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize[shadowTile]) * shadowPixelSize;
+        vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize) * shadowPixelSize;
         
-        float bias = GetShadowBias(shadowTile, geoNoL);
+        float bias = GetShadowBias(geoNoL);
 
         // NOTE: This optimization doesn't really help here rn since the search radius is fixed
         //if (blockRadius <= shadowPixelSize) sampleCount = 1;
@@ -182,7 +182,7 @@ vec2 GetPixelRadius(const in vec2 blockRadius) {
         //if (tile < 0) return 1.0; // TODO: or 0?
         //if (shadowTile < 0) return 0.0;
 
-        float bias = GetShadowBias(shadowTile, geoNoL);
+        float bias = GetShadowBias(geoNoL);
 
         #ifdef SHADOW_ENABLE_HWCOMP
             return CompareDepth(vec2(0.0), bias);

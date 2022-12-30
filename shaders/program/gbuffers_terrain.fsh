@@ -11,8 +11,7 @@ varying float geoNoL;
     #if SHADOW_TYPE == 3
         flat varying int shadowTile;
         flat varying vec3 shadowTileColor;
-        //flat varying float cascadeSize[4];
-        flat varying vec2 shadowProjectionSize[4];
+        flat varying vec2 shadowProjectionSize;
     #endif
 #endif
 
