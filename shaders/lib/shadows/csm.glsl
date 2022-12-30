@@ -236,15 +236,16 @@ vec3 GetShadowTileColor(const in int tile) {
 
             // vertex is facing towards the sun
             mat4 matShadowProjection[4];
-            for (int i = 0; i < 4; i++) {
-	            matShadowProjection[i] = GetShadowTileProjectionMatrix(i);
-            }
-
-            shadowTile = GetShadowTile(matShadowProjection, blockPos);
+            matShadowProjection[0] = GetShadowTileProjectionMatrix(0);
+            matShadowProjection[1] = GetShadowTileProjectionMatrix(1);
+            matShadowProjection[2] = GetShadowTileProjectionMatrix(2);
+            matShadowProjection[3] = GetShadowTileProjectionMatrix(3);
 
             shadowProjectionSize = 2.0 / vec2(
                 matShadowProjection[shadowTile][0].x,
                 matShadowProjection[shadowTile][1].y);
+
+            shadowTile = GetShadowTile(matShadowProjection, blockPos);
 
             #if defined DEBUG_CASCADE_TINT && !defined RENDER_TEXTURED
                 shadowTileColor = GetShadowTileColor(shadowTile);
