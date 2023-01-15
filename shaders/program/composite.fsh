@@ -6,7 +6,7 @@
 
 in vec2 texcoord;
 
-#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == SHADOW_TYPE_CASCADED && DEBUG_SHADOW_BUFFER != 0
+#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == SHADOW_TYPE_CASCADED
 	in vec3 shadowTileColors[4];
 	in mat4 matShadowToScene[4];
 
@@ -18,12 +18,9 @@ in vec2 texcoord;
     #endif
 #endif
 
-uniform sampler2D gcolor;
 uniform sampler2D shadowcolor0;
 uniform sampler2D shadowtex0;
 uniform sampler2D shadowtex1;
-
-uniform float frameTimeCounter;
 
 #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 	uniform mat4 shadowModelView;
@@ -43,10 +40,10 @@ void main() {
 	#elif DEBUG_SHADOW_BUFFER == 3
 		vec3 color = texture(shadowtex1, texcoord).rrr;
 	#else
-		vec3 color = texture(gcolor, texcoord).rgb;
+		const vec3 color = vec3(0.0);
 	#endif
 
-	#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
+	#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3
 		int tile;
 		if (texcoord.y < 0.5)
 			tile = texcoord.x < 0.5 ? 0 : 1;
