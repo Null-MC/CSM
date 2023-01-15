@@ -51,21 +51,19 @@ int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
     return -1;
 }
 
-#ifdef SHADOW_ENABLE_HWCOMP
-    // returns: [0] when depth occluded, [1] otherwise
-    float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float bias) {
-        #ifdef SHADOW_ENABLE_HWCOMP
-            #ifdef IS_IRIS
-                return texture(shadowtex0HW, shadowPos + vec3(offset, -bias)).r;
-            #else
-                return texture(shadow, shadowPos + vec3(offset, -bias)).r;
-            #endif
+// returns: [0] when depth occluded, [1] otherwise
+float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float bias) {
+    #ifdef SHADOW_ENABLE_HWCOMP
+        #ifdef IS_IRIS
+            return texture(shadowtex0HW, shadowPos + vec3(offset, -bias)).r;
         #else
-            float texDepth = SampleDepth(shadowPos[tile].xy, vec2(0.0));
-            return step(shadowPos[tile].z, texDepth + bias);
+            return texture(shadow, shadowPos + vec3(offset, -bias)).r;
         #endif
-    }
-#endif
+    #else
+        float texDepth = SampleDepth(shadowPos.xy, vec2(0.0));
+        return step(shadowPos.z, texDepth + bias);
+    #endif
+}
 
 #if SHADOW_FILTER != 0
     float GetShadowing_PCF(const in vec3 shadowPos, const in float blockRadius, const in int sampleCount, const in int tile) {

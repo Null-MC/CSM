@@ -6,8 +6,8 @@ const vec3 _shadowTileColors[4] = vec3[](
     vec3(0.0, 0.0, 1.0),
     vec3(1.0, 0.0, 1.0));
 
-#ifdef IS_IRIS
-    layout(std430, binding = 0) buffer csmData {
+#if defined IS_IRIS && !defined RENDER_BEGIN
+    layout(std430, binding = 0) readonly buffer csmData {
         float cascadeSize[4];           // 16
         vec2 shadowProjectionSize[4];   // 32
         vec2 shadowProjectionPos[4];    // 32

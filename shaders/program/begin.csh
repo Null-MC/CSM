@@ -9,6 +9,13 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 const ivec3 workGroups = ivec3(4, 1, 1);
 
+layout(std430, binding = 0) buffer csmData {
+    float cascadeSize[4];           // 16
+    vec2 shadowProjectionSize[4];   // 32
+    vec2 shadowProjectionPos[4];    // 32
+    mat4 cascadeProjection[4];      // 256
+};
+
 
 #if defined SHADOW_ENABLED && SHADOW_TYPE == SHADOW_TYPE_CASCADED
     uniform mat4 gbufferModelView;
@@ -30,7 +37,7 @@ void main() {
         cascadeSizes[3] = GetCascadeDistance(3);
 
         int i = int(gl_GlobalInvocationID.x);
-        
+
         cascadeSize[i] = cascadeSizes[i];
         shadowProjectionPos[i] = GetShadowTilePos(i);
         cascadeProjection[i] = GetShadowTileProjectionMatrix(i);
