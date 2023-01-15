@@ -1,6 +1,5 @@
 #define SHADOW_TYPE 3 // [0 1 2 3]
 //#define IS_OPTIFINE
-#define IS_IRIS
 
 // Shadow Options
 //#define SHADOW_EXCLUDE_ENTITIES

@@ -4,33 +4,36 @@
 #include "/lib/common.glsl"
 #include "/lib/constants.glsl"
 
-#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
-	uniform mat4 shadowModelView;
-	uniform float near;
-	uniform float far;
-#endif
-
-varying vec2 texcoord;
+in vec2 texcoord;
 
 #if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == SHADOW_TYPE_CASCADED && DEBUG_SHADOW_BUFFER != 0
-	varying vec3 shadowTileColors[4];
-	varying mat4 matShadowToScene[4];
+	in vec3 shadowTileColors[4];
+	in mat4 matShadowToScene[4];
 
     #ifdef SHADOW_CSM_TIGHTEN
-        varying vec3 clipSize[4];
+        in vec3 clipSize[4];
     #else
-    	varying vec3 clipMin[4];
-    	varying vec3 clipMax[4];
+    	in vec3 clipMin[4];
+    	in vec3 clipMax[4];
     #endif
 #endif
-
-uniform float frameTimeCounter;
 
 uniform sampler2D gcolor;
 uniform sampler2D shadowcolor0;
 uniform sampler2D shadowtex0;
 uniform sampler2D shadowtex1;
 
+uniform float frameTimeCounter;
+
+#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
+	uniform mat4 shadowModelView;
+	uniform float near;
+	uniform float far;
+#endif
+
+
+/* RENDERTARGETS: 0 */
+layout(location = 0) out vec4 outColor0;
 
 void main() {
 	#if DEBUG_SHADOW_BUFFER == 1
@@ -83,6 +86,5 @@ void main() {
 		}
 	#endif
 
-/* DRAWBUFFERS:0 */
-	gl_FragData[0] = vec4(color, 1.0); //gcolor
+	outColor0 = vec4(color, 1.0);
 }

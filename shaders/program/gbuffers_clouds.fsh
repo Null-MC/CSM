@@ -10,9 +10,11 @@ varying vec4 glcolor;
 uniform sampler2D texture;
 
 
+/* RENDERTARGETS: 0 */
+layout(location = 0) out vec4 outColor0;
+
 void main() {
 	vec4 color = texture2D(texture, texcoord) * glcolor;
 
-	/* DRAWBUFFERS:0 */
-	gl_FragData[0] = color;
+	outColor0 = color;
 }
