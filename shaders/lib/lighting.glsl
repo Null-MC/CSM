@@ -11,11 +11,18 @@
 
 		vPos = viewPos.xyz;// / viewPos.w;
 
+		vNormal = gl_Normal;
+
+		#ifdef RENDER_TERRAIN
+			if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10004.0)
+				vNormal = vec3(0.0, 1.0, 0.0);
+		#endif
+
 		#ifdef RENDER_TEXTURED
 			// TODO: extract billboard direction from view matrix?
-			vNormal = normalize(gl_NormalMatrix * gl_Normal);
+			vNormal = normalize(gl_NormalMatrix * vNormal);
 		#else
-			vNormal = normalize(gl_NormalMatrix * gl_Normal);
+			vNormal = normalize(gl_NormalMatrix * vNormal);
 		#endif
 
 		#ifdef SHADOW_ENABLED
