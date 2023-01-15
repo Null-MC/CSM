@@ -24,8 +24,8 @@ out vec2 texcoord;
     #endif
 #endif
 
-#if SHADOW_TYPE == 3
-    #ifdef IS_OPTIFINE
+#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
+    #ifndef IS_IRIS
         uniform mat4 gbufferPreviousModelView;
     	uniform mat4 gbufferPreviousProjection;
     #endif
@@ -60,19 +60,21 @@ void main() {
 			mat4 matSceneProjectionRanged = gbufferProjection;
 			SetProjectionRange(matSceneProjectionRanged, rangeNear, rangeFar);
 
-			#ifndef IS_IRIS
-				mat4 cascadeProjection = GetShadowTileProjectionMatrix(tile);
+			#ifdef IS_IRIS
+				mat4 _cascadeProjection = cascadeProjection[tile];
+			#else
+				mat4 _cascadeProjection = GetShadowTileProjectionMatrix(tile);
 			#endif
 			
-			mat4 matShadowWorldViewProjectionInv = inverse(cascadeProjection * shadowModelView);
+			mat4 matShadowWorldViewProjectionInv = inverse(_cascadeProjection * shadowModelView);
 			matShadowToScene[tile] = matSceneProjectionRanged * gbufferModelView * matShadowWorldViewProjectionInv;
 
             #ifdef SHADOW_CSM_TIGHTEN
-                clipSize[tile] = GetCascadePaddedFrustumClipBounds(cascadeProjection, -1.5);
+                clipSize[tile] = GetCascadePaddedFrustumClipBounds(_cascadeProjection, -1.5);
             #else
                 // project frustum points
                 mat4 matModelViewProjectionInv = inverse(matSceneProjectionRanged * gbufferModelView);
-                mat4 matSceneToShadow = cascadeProjection * shadowModelView * matModelViewProjectionInv;
+                mat4 matSceneToShadow = _cascadeProjection * shadowModelView * matModelViewProjectionInv;
 
                 GetFrustumMinMax(matSceneToShadow, clipMin[tile], clipMax[tile]);
             #endif

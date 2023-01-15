@@ -25,7 +25,7 @@ in float geoNoL;
     #endif
 #endif
 
-uniform sampler2D texture;
+uniform sampler2D gtexture;
 uniform sampler2D lightmap;
 
 uniform vec3 upPosition;
@@ -46,7 +46,7 @@ uniform vec3 fogColor;
     uniform sampler2D shadowtex1;
 
     #ifdef SHADOW_ENABLE_HWCOMP
-        #ifndef IS_OPTIFINE
+        #ifdef IS_IRIS
             uniform sampler2DShadow shadowtex0HW;
         #else
             uniform sampler2DShadow shadow;

@@ -25,6 +25,9 @@ vec3 calcSkyColor(vec3 pos) {
 }
 
 
+/* RENDERTARGETS: 0 */
+layout(location = 0) out vec4 outColor0;
+
 void main() {
 	vec3 color;
 	if (starData.a > 0.5) {
@@ -36,6 +39,5 @@ void main() {
 		color = calcSkyColor(normalize(pos.xyz));
 	}
 
-	/* DRAWBUFFERS:0 */
-	gl_FragData[0] = vec4(color, 1.0);
+	outColor0 = vec4(color, 1.0);
 }

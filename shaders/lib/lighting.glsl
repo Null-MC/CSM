@@ -47,7 +47,7 @@
 	const float shininess = 16.0;
 
 	vec4 ApplyLighting(const in vec4 albedo, const in vec3 lightColor, const in vec2 lm) {
-		vec3 lmValue = texture2D(lightmap, lm).rgb;
+		vec3 lmValue = texture(lightmap, lm).rgb;
 		lmValue = RGBToLinear(lmValue);
 		vec4 final = albedo;
 
@@ -94,7 +94,7 @@
 	}
 
 	vec4 BasicLighting() {
-		vec4 albedo = texture(texture, texcoord) * glcolor;
+		vec4 albedo = texture(gtexture, texcoord) * glcolor;
 		albedo.rgb = RGBToLinear(albedo.rgb);
 
 		#if !defined RENDER_WATER && !defined RENDER_HAND_WATER

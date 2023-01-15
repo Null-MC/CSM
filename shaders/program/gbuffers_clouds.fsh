@@ -7,14 +7,14 @@
 varying vec2 texcoord;
 varying vec4 glcolor;
 
-uniform sampler2D texture;
+uniform sampler2D gtexture;
 
 
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 outColor0;
 
 void main() {
-	vec4 color = texture2D(texture, texcoord) * glcolor;
+	vec4 color = texture(gtexture, texcoord) * glcolor;
 
 	outColor0 = color;
 }

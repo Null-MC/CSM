@@ -15,14 +15,14 @@ float GetShadowBias(const in int tile, const in float geoNoL) {
 }
 
 float SampleDepth(const in vec2 shadowPos, const in vec2 offset) {
-    #ifdef IS_OPTIFINE
+    #ifdef IS_IRIS
+        return texture(shadowtex0, shadowPos + offset).r;
+    #else
         #if SHADOW_COLORS == 0
             return texture(shadowtex0, shadowPos + offset).r;
         #else
             return texture(shadowtex1, shadowPos + offset).r;
         #endif
-    #else
-        return texture(shadowtex0, shadowPos + offset).r;
     #endif
 }
 
@@ -36,9 +36,14 @@ int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
         vec2 padding = blockRadius / shadowProjectionSize[i];
 
         // Ignore if outside tile bounds
-        vec2 shadowTilePos = GetShadowTilePos(i);
-        vec2 clipMin = shadowTilePos + padding;
-        vec2 clipMax = shadowTilePos + 0.5 - padding;
+        #ifdef IS_IRIS
+            vec2 clipMin = shadowProjectionPos[i] + padding;
+            vec2 clipMax = shadowProjectionPos[i] + 0.5 - padding;
+        #else
+            vec2 shadowTilePos = GetShadowTilePos(i);
+            vec2 clipMin = shadowTilePos + padding;
+            vec2 clipMax = shadowTilePos + 0.5 - padding;
+        #endif
 
         if (clamp(shadowPos[i].xy, clipMin, clipMax) == shadowPos[i].xy) return i;
     }
@@ -49,10 +54,15 @@ int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
 #ifdef SHADOW_ENABLE_HWCOMP
     // returns: [0] when depth occluded, [1] otherwise
     float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float bias) {
-        #ifdef IS_OPTIFINE
-            return texture(shadow, shadowPos + vec3(offset, -bias)).r;
+        #ifdef SHADOW_ENABLE_HWCOMP
+            #ifdef IS_IRIS
+                return texture(shadowtex0HW, shadowPos + vec3(offset, -bias)).r;
+            #else
+                return texture(shadow, shadowPos + vec3(offset, -bias)).r;
+            #endif
         #else
-            return texture(shadowtex0HW, shadowPos + vec3(offset, -bias)).r;
+            float texDepth = SampleDepth(shadowPos[tile].xy, vec2(0.0));
+            return step(shadowPos[tile].z, texDepth + bias);
         #endif
     }
 #endif
@@ -174,12 +184,6 @@ int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
         if (tile < 0) return 1.0; // TODO: or 0?
 
         float bias = GetShadowBias(tile, geoNoL);
-
-        #ifdef SHADOW_ENABLE_HWCOMP
-            return CompareDepth(shadowPos[tile], vec2(0.0), bias);
-        #else
-            float texDepth = SampleDepth(shadowPos[tile].xy, vec2(0.0));
-            return step(shadowPos[tile].z, texDepth + bias);
-        #endif
+        return CompareDepth(shadowPos[tile], vec2(0.0), bias);
     }
 #endif

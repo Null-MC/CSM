@@ -23,7 +23,7 @@ uniform float frameTimeCounter;
 uniform vec3 cameraPosition;
 uniform int renderStage;
 
-#if MC_VERSION >= 11700 && defined IS_OPTIFINE
+#if MC_VERSION >= 11700 && !defined IS_IRIS
     uniform vec3 chunkOffset;
 #else
     uniform mat4 gbufferModelViewInverse;
@@ -34,7 +34,7 @@ uniform int renderStage;
 	uniform float near;
 	uniform float far;
 
-    #ifdef IS_OPTIFINE
+    #ifndef IS_IRIS
         // NOTE: We are using the previous gbuffer matrices cause the current ones don't work in shadow pass
         uniform mat4 gbufferPreviousModelView;
         uniform mat4 gbufferPreviousProjection;
@@ -56,7 +56,7 @@ void main() {
 	int blockId = int(mc_Entity.x + 0.5);
 
 	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
-        #if MC_VERSION >= 11700 && defined IS_OPTIFINE
+        #if MC_VERSION >= 11700 && !defined IS_IRIS
             vOriginPos = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
         #else
             vOriginPos = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));

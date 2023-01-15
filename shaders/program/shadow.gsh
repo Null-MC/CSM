@@ -32,7 +32,7 @@ uniform int renderStage;
 	uniform float near;
 	uniform float far;
 
-    #ifdef IS_OPTIFINE
+    #ifndef IS_IRIS
         // NOTE: We are using the previous gbuffer matrices cause the current ones don't work in shadow pass
         uniform mat4 gbufferPreviousModelView;
         uniform mat4 gbufferPreviousProjection;

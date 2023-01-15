@@ -9,13 +9,16 @@ varying vec2 texcoord;
 varying vec4 glcolor;
 
 uniform sampler2D lightmap;
-uniform sampler2D texture;
+uniform sampler2D gtexture;
 
+
+/* RENDERTARGETS: 0 */
+layout(location = 0) out vec4 outColor0;
 
 void main() {
-	vec4 color = texture2D(texture, texcoord) * glcolor;
-	color *= texture2D(lightmap, lmcoord);
+	vec4 color = texture(gtexture, texcoord) * glcolor;
+	
+	color *= texture(lightmap, lmcoord);
 
-	/* DRAWBUFFERS:0 */
-	gl_FragData[0] = color;
+	outColor0 = color;
 }

@@ -11,7 +11,7 @@ varying vec4 gColor;
 	flat varying vec2 gShadowTilePos;
 #endif
 
-uniform sampler2D texture;
+uniform sampler2D gtexture;
 
 
 void main() {
@@ -20,7 +20,7 @@ void main() {
 		if (p.x < 0 || p.x >= 0.5 || p.y < 0 || p.y >= 0.5) discard;
 	#endif
 
-	vec4 color = texture2D(texture, gTexcoord) * gColor;
+	vec4 color = texture(gtexture, gTexcoord) * gColor;
 
 	gl_FragData[0] = color;
 }

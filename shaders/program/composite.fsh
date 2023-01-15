@@ -37,13 +37,13 @@ layout(location = 0) out vec4 outColor0;
 
 void main() {
 	#if DEBUG_SHADOW_BUFFER == 1
-		vec3 color = texture2D(shadowcolor0, texcoord).rgb;
+		vec3 color = texture(shadowcolor0, texcoord).rgb;
 	#elif DEBUG_SHADOW_BUFFER == 2
-		vec3 color = texture2D(shadowtex0, texcoord).rrr;
+		vec3 color = texture(shadowtex0, texcoord).rrr;
 	#elif DEBUG_SHADOW_BUFFER == 3
-		vec3 color = texture2D(shadowtex1, texcoord).rrr;
+		vec3 color = texture(shadowtex1, texcoord).rrr;
 	#else
-		vec3 color = texture2D(gcolor, texcoord).rgb;
+		vec3 color = texture(gcolor, texcoord).rgb;
 	#endif
 
 	#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
@@ -55,7 +55,7 @@ void main() {
 
 		vec3 clipPos;
 		clipPos.xy = fract(texcoord * 2.0);
-		clipPos.z = texture2D(shadowtex0, texcoord).r;
+		clipPos.z = texture(shadowtex0, texcoord).r;
 		clipPos = clipPos * 2.0 - 1.0;
 
 		vec4 sceneClipPos = matShadowToScene[tile] * vec4(clipPos, 1.0);

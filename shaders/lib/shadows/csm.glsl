@@ -32,7 +32,7 @@ vec3 GetShadowTileColor(const in int tile) {
     return _shadowTileColors[tile];
 }
 
-#if defined RENDER_VERTEX || defined RENDER_GEOMETRY
+#if !defined RENDER_FRAG
     // tile: 0-3
     float GetCascadeDistance(const in int tile) {
         #ifdef SHADOW_CSM_FITRANGE
@@ -144,12 +144,12 @@ vec3 GetShadowTileColor(const in int tile) {
         mat4 matShadowProjection = BuildOrthoProjectionMatrix(cascadeSize, cascadeSize, zNear, zFar);
 
         #ifdef SHADOW_CSM_TIGHTEN
-            #ifdef IS_OPTIFINE
-                mat4 matSceneProjectionRanged = gbufferPreviousProjection;
-                mat4 matSceneModelView = gbufferPreviousModelView;
-            #else
+            #ifdef IS_IRIS
                 mat4 matSceneProjectionRanged = gbufferProjection;
                 mat4 matSceneModelView = gbufferModelView;
+            #else
+                mat4 matSceneProjectionRanged = gbufferPreviousProjection;
+                mat4 matSceneModelView = gbufferPreviousModelView;
             #endif
             
             // project scene view frustum slices to shadow-view space and compute min/max XY bounds
@@ -239,16 +239,21 @@ vec3 GetShadowTileColor(const in int tile) {
                     shadowProjectionSize[i] = 2.0 / vec2(
                         cascadeProjection[i][0].x,
                         cascadeProjection[i][1].y);
-                #endif
 
-                cascadeSize[i] = GetCascadeDistance(i);
+                    cascadeSize[i] = GetCascadeDistance(i);
+                #endif
                 
                 // convert to shadow screen space
                 shadowPos[i] = (cascadeProjection[i] * shadowViewPos).xyz;
 
-                vec2 shadowTilePos = GetShadowTilePos(i);
                 shadowPos[i] = shadowPos[i] * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
-                shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowTilePos; // scale and translate to quadrant
+
+                #ifdef IS_IRIS
+                    shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowProjectionPos[i]; // scale and translate to quadrant
+                #else
+                    vec2 shadowProjectionPos = GetShadowTilePos(i);
+                    shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowProjectionPos; // scale and translate to quadrant
+                #endif
             }
 
             #if defined RENDER_ENTITIES || defined RENDER_HAND
@@ -258,7 +263,7 @@ vec3 GetShadowTileColor(const in int tile) {
                 blockPos = floor(blockPos + 0.5);
                 blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
             #else
-                #if MC_VERSION >= 11700 && defined IS_OPTIFINE
+                #if MC_VERSION >= 11700 && !defined IS_IRIS
                     vec3 blockPos = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
 
                     #if defined RENDER_TERRAIN
