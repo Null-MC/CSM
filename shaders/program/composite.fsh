@@ -1,4 +1,10 @@
-#if SHADOW_TYPE == 3
+#define RENDER_COMPOSITE
+#define RENDER_FRAG
+
+#include "/lib/common.glsl"
+#include "/lib/constants.glsl"
+
+#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 	uniform mat4 shadowModelView;
 	uniform float near;
 	uniform float far;
@@ -6,7 +12,7 @@
 
 varying vec2 texcoord;
 
-#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == 3 && DEBUG_SHADOW_BUFFER != 0
+#if defined DEBUG_CSM_FRUSTUM && SHADOW_TYPE == SHADOW_TYPE_CASCADED && DEBUG_SHADOW_BUFFER != 0
 	varying vec3 shadowTileColors[4];
 	varying mat4 matShadowToScene[4];
 

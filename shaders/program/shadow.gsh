@@ -1,10 +1,16 @@
+#define RENDER_SHADOW
+#define RENDER_GEOMETRY
+
+#include "/lib/common.glsl"
+#include "/lib/constants.glsl"
+
 layout(triangles) in;
 layout(triangle_strip, max_vertices=12) out;
 
 in vec2 vTexcoord[3];
 in vec4 vColor[3];
 
-#if SHADOW_TYPE == 3
+#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 	flat in vec3 vOriginPos[3];
 	flat in int vBlockId[3];
 	flat in int vEntityId[3];
@@ -13,7 +19,7 @@ in vec4 vColor[3];
 out vec2 gTexcoord;
 out vec4 gColor;
 
-#if SHADOW_TYPE == 3
+#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 	flat out vec2 gShadowTilePos;
 #endif
 
@@ -22,7 +28,7 @@ uniform mat4 shadowModelViewInverse;
 uniform vec3 cameraPosition;
 uniform int renderStage;
 
-#if SHADOW_TYPE == 3
+#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 	uniform float near;
 	uniform float far;
 
@@ -36,7 +42,7 @@ uniform int renderStage;
     #endif
 
 	#include "/lib/shadows/csm.glsl"
-#elif SHADOW_TYPE != 0
+#elif SHADOW_TYPE != SHADOW_TYPE_NONE
 	#include "/lib/shadows/basic.glsl"
 #endif
 
@@ -52,14 +58,16 @@ void main() {
 
     //if (vEntityId[0] == MATERIAL_LIGHTNING_BOLT) return;
 
-	#if SHADOW_TYPE == 3
-		mat4 matShadowProjections[4];
-		matShadowProjections[0] = GetShadowTileProjectionMatrix(0);
-		matShadowProjections[1] = GetShadowTileProjectionMatrix(1);
-		matShadowProjections[2] = GetShadowTileProjectionMatrix(2);
-		matShadowProjections[3] = GetShadowTileProjectionMatrix(3);
+	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
+		#ifndef IS_IRIS
+			mat4 cascadeProjection[4];
+			cascadeProjection[0] = GetShadowTileProjectionMatrix(0);
+			cascadeProjection[1] = GetShadowTileProjectionMatrix(1);
+			cascadeProjection[2] = GetShadowTileProjectionMatrix(2);
+			cascadeProjection[3] = GetShadowTileProjectionMatrix(3);
+		#endif
 
-		int shadowTile = GetShadowTile(matShadowProjections, vOriginPos[0]);
+		int shadowTile = GetShadowTile(cascadeProjection, vOriginPos[0]);
 		if (shadowTile < 0) return;
 
 		#ifndef SHADOW_EXCLUDE_ENTITIES
@@ -78,7 +86,7 @@ void main() {
 			if (c != shadowTile) {
 				#ifdef SHADOW_CSM_OVERLAP
 					// duplicate geometry if intersecting overlapping cascades
-					if (!CascadeIntersectsProjection(vOriginPos[0], matShadowProjections[c])) continue;
+					if (!CascadeIntersectsProjection(vOriginPos[0], cascadeProjection[c])) continue;
 				#else
 					continue;
 				#endif
@@ -91,7 +99,7 @@ void main() {
 				gTexcoord = vTexcoord[v];
 				gColor = vColor[v];
 
-				gl_Position = matShadowProjections[c] * gl_in[v].gl_Position;
+				gl_Position = cascadeProjection[c] * gl_in[v].gl_Position;
 
 				gl_Position.xy = gl_Position.xy * 0.5 + 0.5;
 				gl_Position.xy = gl_Position.xy * 0.5 + shadowTilePos;
@@ -109,7 +117,7 @@ void main() {
 
 			gl_Position = gl_ProjectionMatrix * gl_in[v].gl_Position;
 
-			#if SHADOW_TYPE == 2
+			#if SHADOW_TYPE == SHADOW_TYPE_DISTORTED
 				gl_Position.xyz = distort(gl_Position.xyz);
 			#endif
 

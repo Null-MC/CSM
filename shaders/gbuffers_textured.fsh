@@ -1,11 +1,6 @@
-#version 120
+#version 430
 
-#extension GL_ARB_gpu_shader5 : enable
-
-#define WORLD_OVERWORLD
-#define RENDER_TEXTURED
-#define RENDER_FRAG
+//#extension GL_ARB_gpu_shader5 : enable
 
 #include "overworld.glsl"
-#include "/lib/common.glsl"
 #include "/program/gbuffers_textured.fsh"

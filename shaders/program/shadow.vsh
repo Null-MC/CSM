@@ -1,3 +1,9 @@
+#define RENDER_SHADOW
+#define RENDER_VERTEX
+
+#include "/lib/common.glsl"
+#include "/lib/constants.glsl"
+
 varying vec2 vTexcoord;
 varying vec4 vColor;
 
@@ -23,7 +29,7 @@ uniform int renderStage;
     uniform mat4 gbufferModelViewInverse;
 #endif
 
-#if SHADOW_TYPE == 3
+#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 	uniform int entityId;
 	uniform float near;
 	uniform float far;
@@ -49,7 +55,7 @@ void main() {
 
 	int blockId = int(mc_Entity.x + 0.5);
 
-	#if SHADOW_TYPE == 3
+	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
         #if MC_VERSION >= 11700 && defined IS_OPTIFINE
             vOriginPos = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
         #else

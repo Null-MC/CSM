@@ -1,3 +1,5 @@
+#define WORLD_OVERWORLD
+
 /*
 const int shadowtex0Format = R32F;
 const int shadowtex1Format = R32F;

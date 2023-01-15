@@ -32,7 +32,7 @@
 				// #endif
 			#endif
 
-			#if SHADOW_TYPE != 0 && !defined RENDER_SHADOW && defined SHADOW_ENABLED
+			#if SHADOW_TYPE != SHADOW_TYPE_NONE && !defined RENDER_SHADOW && defined SHADOW_ENABLED
 				ApplyShadows(viewPos);
 			#endif
 		#else
@@ -45,20 +45,6 @@
 
 #ifdef RENDER_FRAG
 	const float shininess = 16.0;
-
-    #if MC_VERSION >= 11700
-    	uniform float alphaTestRef;
-    #endif
-
-	uniform vec3 upPosition;
-
-	uniform int fogMode;
-	uniform float fogStart;
-	uniform float fogEnd;
-	uniform int fogShape;
-	uniform vec3 fogColor;
-	uniform vec3 skyColor;
-
 
 	vec4 ApplyLighting(const in vec4 albedo, const in vec3 lightColor, const in vec2 lm) {
 		vec3 lmValue = texture2D(lightmap, lm).rgb;
@@ -108,21 +94,27 @@
 	}
 
 	vec4 BasicLighting() {
-		vec4 texColor = texture2D(texture, texcoord) * glcolor;
+		vec4 albedo = texture(texture, texcoord) * glcolor;
+		albedo.rgb = RGBToLinear(albedo.rgb);
+
+		#if !defined RENDER_WATER && !defined RENDER_HAND_WATER
+			if (albedo.a < alphaTestRef) {
+				discard;
+				return vec4(0.0);
+			}
+		#endif
+
 		vec3 lightColor = vec3(1.0);
 		vec2 lm = lmcoord;
-
-		vec4 albedo = texColor;
-		albedo.rgb = RGBToLinear(albedo.rgb);
 
 		float dark = lm.y * SHADOW_BRIGHTNESS * (31.0 / 32.0) + (1.0 / 32.0);
 
 		if (geoNoL >= EPSILON && lm.y > 1.0/32.0) {
 			#if SHADOW_TYPE != 0 && defined SHADOW_ENABLED
-				float shadow = GetShadowing();
+				float shadow = GetShadowing(shadowPos);
 
 				#if SHADOW_COLORS == 1
-					vec3 shadowColor = GetShadowColor();
+					vec3 shadowColor = GetShadowColor(shadowPos);
 
 					shadowColor = mix(vec3(1.0), shadowColor, shadow);
 

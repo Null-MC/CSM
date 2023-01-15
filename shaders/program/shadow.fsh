@@ -1,3 +1,9 @@
+#define RENDER_SHADOW
+#define RENDER_FRAG
+
+#include "/lib/common.glsl"
+#include "/lib/constants.glsl"
+
 varying vec2 gTexcoord;
 varying vec4 gColor;
 

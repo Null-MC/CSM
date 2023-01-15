@@ -1,19 +1,28 @@
-varying vec2 lmcoord;
-varying vec2 texcoord;
-varying vec4 glcolor;
-varying vec3 vPos;
-varying vec3 vNormal;
-varying float geoNoL;
+#define RENDER_HAND
+#define RENDER_VERTEX
+
+#include "/lib/common.glsl"
+#include "/lib/constants.glsl"
+
+out vec2 lmcoord;
+out vec2 texcoord;
+out vec4 glcolor;
+out vec3 vPos;
+out vec3 vNormal;
+out float geoNoL;
 
 #ifdef SHADOW_ENABLED
-	#if SHADOW_TYPE == 3
-		varying vec4 shadowPos[4];
-		flat varying vec2 shadowProjectionSize[4];
-		flat varying int shadowTile;
-		flat varying vec3 shadowTileColor;
-		flat varying float cascadeSize[4];
-	#elif SHADOW_TYPE != 0
-		varying vec4 shadowPos;
+	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
+		out vec3 shadowPos[4];
+		flat out int shadowTile;
+		flat out vec3 shadowTileColor;
+
+		#ifndef IS_IRIS
+			flat out vec2 shadowProjectionSize[4];
+			flat out float cascadeSize[4];
+		#endif
+	#elif SHADOW_TYPE != SHADOW_TYPE_NONE
+		out vec3 shadowPos;
 	#endif
 #endif
 
@@ -27,7 +36,7 @@ uniform mat4 gbufferModelViewInverse;
 	uniform vec3 shadowLightPosition;
 	uniform float far;
 
-	#if SHADOW_TYPE == 3
+	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 		attribute vec3 at_midBlock;
 
         #ifdef IS_OPTIFINE
@@ -39,7 +48,7 @@ uniform mat4 gbufferModelViewInverse;
 		uniform float near;
 
 		#include "/lib/shadows/csm.glsl"
-	#elif SHADOW_TYPE != 0
+	#elif SHADOW_TYPE != SHADOW_TYPE_NONE
 		#include "/lib/shadows/basic.glsl"
 	#endif
 #endif

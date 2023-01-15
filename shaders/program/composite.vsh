@@ -1,4 +1,10 @@
-#if SHADOW_TYPE == 3
+#define RENDER_COMPOSITE
+#define RENDER_VERTEX
+
+#include "/lib/common.glsl"
+#include "/lib/constants.glsl"
+
+#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 	uniform mat4 shadowModelView;
 	uniform float near;
 	uniform float far;
@@ -36,7 +42,7 @@ void main() {
 	gl_Position = ftransform();
 	texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 
-	#if SHADOW_TYPE == 3 && defined DEBUG_CSM_FRUSTUM && DEBUG_SHADOW_BUFFER != 0
+	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CSM_FRUSTUM && DEBUG_SHADOW_BUFFER != 0
 		//mat4 matShadowModelView = GetShadowModelViewMatrix();
 
 		for (int tile = 0; tile < 4; tile++) {
@@ -49,6 +55,7 @@ void main() {
 			SetProjectionRange(matSceneProjectionRanged, rangeNear, rangeFar);
 
 			mat4 matShadowProjection = GetShadowTileProjectionMatrix(tile);
+			
 			mat4 matShadowWorldViewProjectionInv = inverse(matShadowProjection * shadowModelView);
 			matShadowToScene[tile] = matSceneProjectionRanged * gbufferModelView * matShadowWorldViewProjectionInv;
 

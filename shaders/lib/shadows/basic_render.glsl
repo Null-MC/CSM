@@ -1,5 +1,5 @@
 #if SHADOW_COLORS == 1
-	vec3 GetShadowColor() {
+	vec3 GetShadowColor(const in vec3 shadowPos) {
 		//when colored shadows are enabled and there's nothing OPAQUE between us and the sun,
 		//perform a 2nd check to see if there's anything translucent between us and the sun.
 		if (texture2D(shadowtex0, shadowPos.xy).r >= shadowPos.z) return vec3(1.0);
@@ -14,38 +14,30 @@
 	}
 #endif
 
-float SampleDepth(const in vec2 offset) {
+float SampleDepth(const in vec2 shadowPos, const in vec2 offset) {
 	#if SHADOW_COLORS == 0
 		//for normal shadows, only consider the closest thing to the sun,
 		//regardless of whether or not it's opaque.
-		#ifdef RENDER_TEXTURED
-			return texture2D(shadowtex0, shadowPos.xy + offset).r;
-		#else
-			return texture2DProj(shadowtex0, vec4(shadowPos.xy + offset * shadowPos.w, shadowPos.z, shadowPos.w)).r;
-		#endif
+		return texture2D(shadowtex0, shadowPos + offset).r;
 	#else
 		//for invisible and colored shadows, first check the closest OPAQUE thing to the sun.
-		#ifdef RENDER_TEXTURED
-			return texture2D(shadowtex1, shadowPos.xy + offset).r;
-		#else
-			return texture2DProj(shadowtex1, vec4(shadowPos.xy + offset * shadowPos.w, shadowPos.z, shadowPos.w)).r;
-		#endif
+		return texture2D(shadowtex1, shadowPos + offset).r;
 	#endif
 }
 
 #ifdef SHADOW_ENABLE_HWCOMP
     // returns: [0] when depth occluded, [1] otherwise
-    float CompareDepth(const in vec2 offset) {
-        return shadow2D(shadow, shadowPos.xyz + vec3(offset, 0.0)).r;
+    float CompareDepth(const in vec3 shadowPos, const in vec2 offset) {
+        return shadow2D(shadow, shadowPos + vec3(offset, 0.0)).r;
     }
 
     #if SHADOW_FILTER != 0
         // PCF
-        float GetShadowing_PCF(const in vec2 pixelRadius, const in int sampleCount) {
+        float GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
             float shadow = 0.0;
             for (int i = 0; i < sampleCount; i++) {
                 vec2 pixelOffset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
-                shadow += 1.0 - CompareDepth(pixelOffset);
+                shadow += 1.0 - CompareDepth(shadowPos, pixelOffset);
             }
 
             return shadow / sampleCount;
@@ -54,12 +46,12 @@ float SampleDepth(const in vec2 offset) {
 #else
     #if SHADOW_FILTER != 0
         // PCF
-        float GetShadowing_PCF(const in vec2 pixelRadius, const in int sampleCount) {
+        float GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
             float texDepth;
             float shadow = 0.0;
             for (int i = 0; i < sampleCount; i++) {
                 vec2 pixelOffset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
-                float texDepth = SampleDepth(pixelOffset);
+                float texDepth = SampleDepth(shadowPos.xy, pixelOffset);
                 shadow += step(texDepth + EPSILON, shadowPos.z);
             }
 
@@ -100,7 +92,7 @@ float SampleDepth(const in vec2 offset) {
 	#define SHADOW_BLOCKER_SAMPLES 12
 	//#define SHADOW_LIGHT_SIZE 0.0002
 
-	float FindBlockerDistance(const in vec2 pixelRadius, const in int sampleCount) {
+	float FindBlockerDistance(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
 		//float radius = SearchWidth(uvLightSize, shadowPos.z);
 		//float radius = 6.0; //SHADOW_LIGHT_SIZE * (shadowPos.z - PCSS_NEAR) / shadowPos.z;
 		float avgBlockerDistance = 0;
@@ -108,7 +100,7 @@ float SampleDepth(const in vec2 offset) {
 
 		for (int i = 0; i < sampleCount; i++) {
 			vec2 offset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
-			float texDepth = SampleDepth(offset);
+			float texDepth = SampleDepth(shadowPos.xy, offset);
 
 			if (texDepth < shadowPos.z) { // - directionalLightShadowMapBias
 				avgBlockerDistance += texDepth;
@@ -119,13 +111,13 @@ float SampleDepth(const in vec2 offset) {
 		return blockers > 0 ? avgBlockerDistance / blockers : -1.0;
 	}
 
-	float GetShadowing() {
+	float GetShadowing(const in vec3 shadowPos) {
 		vec2 pixelRadius = GetShadowPixelRadius(SHADOW_PCF_SIZE);
 
 		// blocker search
 		int blockerSampleCount = SHADOW_BLOCKER_SAMPLES;
 		if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
-		float blockerDistance = FindBlockerDistance(pixelRadius, blockerSampleCount);
+		float blockerDistance = FindBlockerDistance(shadowPos, pixelRadius, blockerSampleCount);
 		if (blockerDistance < 0.0) return 1.0;
 
 		// penumbra estimation
@@ -136,21 +128,21 @@ float SampleDepth(const in vec2 offset) {
 
 		int pcfSampleCount = SHADOW_PCF_SAMPLES;
 		if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
-		return 1.0 - GetShadowing_PCF(pixelRadius, pcfSampleCount);
+		return 1.0 - GetShadowing_PCF(shadowPos, pixelRadius, pcfSampleCount);
 	}
 #elif SHADOW_FILTER == 1
 	// PCF
-	float GetShadowing() {
+	float GetShadowing(const in vec3 shadowPos) {
 		vec2 pixelRadius = GetShadowPixelRadius(SHADOW_PCF_SIZE);
 
 		int sampleCount = SHADOW_PCF_SAMPLES;
 		if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
-		return 1.0 - GetShadowing_PCF(pixelRadius, sampleCount);
+		return 1.0 - GetShadowing_PCF(shadowPos, pixelRadius, sampleCount);
 	}
 #elif SHADOW_FILTER == 0
 	// Unfiltered
-	float GetShadowing() {
-		float texDepth = SampleDepth(vec2(0.0));
+	float GetShadowing(const in vec3 shadowPos) {
+		float texDepth = SampleDepth(shadowPos.xy, vec2(0.0));
 		return step(shadowPos.z, texDepth);
 	}
 #endif
