@@ -72,7 +72,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset) {
 #if SHADOW_FILTER == 2
 	// PCF + PCSS
 	//#define PCSS_NEAR 1.0
-	#define SHADOW_BLOCKER_SAMPLES 12
+	#define SHADOW_BLOCKER_SAMPLES 6
 	//#define SHADOW_LIGHT_SIZE 0.0002
 
 	float FindBlockerDistance(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
@@ -101,7 +101,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset) {
 		int blockerSampleCount = SHADOW_BLOCKER_SAMPLES;
 		if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
 		float blockerDistance = FindBlockerDistance(shadowPos, pixelRadius, blockerSampleCount);
-		if (blockerDistance < 0.0) return 1.0;
+		if (blockerDistance <= 0.0) return 1.0;
 
 		// penumbra estimation
 		float penumbraWidth = (shadowPos.z - blockerDistance) / blockerDistance;
