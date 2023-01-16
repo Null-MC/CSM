@@ -7,11 +7,13 @@ const int pcf_max = 4;
 
 
 float GetShadowBias(const in int tile, const in float geoNoL) {
-    float blocksPerPixelScale = max(shadowProjectionSize[tile].x, shadowProjectionSize[tile].y) / cascadeTexSize;
+    return 0.000004;
 
-    float zRangeBias = 0.0000001;
-    float xySizeBias = blocksPerPixelScale * tile_dist_bias_factor;
-    return mix(xySizeBias, zRangeBias, geoNoL) * SHADOW_BIAS_SCALE;
+    // float blocksPerPixelScale = max(shadowProjectionSize[tile].x, shadowProjectionSize[tile].y) / cascadeTexSize;
+
+    // float zRangeBias = 0.0000001;
+    // float xySizeBias = blocksPerPixelScale * tile_dist_bias_factor;
+    // return mix(xySizeBias, zRangeBias, geoNoL) * SHADOW_BIAS_SCALE;
 }
 
 float SampleDepth(const in vec2 shadowPos, const in vec2 offset) {
@@ -139,7 +141,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
 
         // blocker search
         int blockerSampleCount = SHADOW_PCSS_SAMPLES;
-        if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
+        //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
         float blockerDistance = FindBlockerDistance(shadowPos[tile], pixelRadius, blockerSampleCount);
         if (blockerDistance <= 0.0) return 1.0;
         //if (blockerDistance >= 1.0) return 0.0;
@@ -148,10 +150,10 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
         float penumbraWidth = (shadowPos[tile].z - blockerDistance) / blockerDistance;
 
         // percentage-close filtering
-        pixelRadius *= min(penumbraWidth * 40.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+        pixelRadius *= min(penumbraWidth * 20.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
 
         int pcfSampleCount = SHADOW_PCF_SAMPLES;
-        if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
+        //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
 
         return 1.0 - GetShadowing_PCF(shadowPos[tile], pixelRadius, pcfSampleCount, tile);
     }

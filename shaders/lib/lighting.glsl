@@ -40,7 +40,10 @@
 			#endif
 
 			#if SHADOW_TYPE != SHADOW_TYPE_NONE && !defined RENDER_SHADOW && defined SHADOW_ENABLED
-				ApplyShadows(viewPos);
+            	vec3 shadowViewPos = viewPos.xyz + vNormal * SHADOW_NORMAL_BIAS;
+				vec3 shadowLocalPos = (gbufferModelViewInverse * vec4(shadowViewPos, 1.0)).xyz;
+
+				ApplyShadows(shadowLocalPos);
 			#endif
 		#else
 			geoNoL = 1.0;

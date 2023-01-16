@@ -216,7 +216,7 @@ vec3 GetShadowTileColor(const in int tile) {
 #endif
 
 #if defined RENDER_VERTEX && !defined RENDER_COMPOSITE
-    void ApplyShadows(const in vec4 viewPos) {
+    void ApplyShadows(const in vec3 localPos) {
         #ifndef RENDER_TEXTURED
             shadowTileColor = vec3(1.0);
         #endif
@@ -230,9 +230,7 @@ vec3 GetShadowTileColor(const in int tile) {
                 cascadeProjection[3] = GetShadowTileProjectionMatrix(3);
             #endif
 
-            mat4 matViewToShadowView = shadowModelView * gbufferModelViewInverse;
-
-            vec4 shadowViewPos = matViewToShadowView * viewPos;
+            vec3 shadowViewPos = (shadowModelView * vec4(localPos, 1.0)).xyz;
 
             for (int i = 0; i < 4; i++) {
                 #ifndef IS_IRIS
@@ -244,7 +242,7 @@ vec3 GetShadowTileColor(const in int tile) {
                 #endif
                 
                 // convert to shadow screen space
-                shadowPos[i] = (cascadeProjection[i] * shadowViewPos).xyz;
+                shadowPos[i] = (cascadeProjection[i] * vec4(shadowViewPos, 1.0)).xyz;
 
                 shadowPos[i] = shadowPos[i] * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
 
@@ -272,7 +270,7 @@ vec3 GetShadowTileColor(const in int tile) {
                 #else
                     vec3 blockPos = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));
                     blockPos = (gl_ModelViewMatrix * vec4(blockPos, 1.0)).xyz;
-                    blockPos = (matViewToShadowView * vec4(blockPos, 1.0)).xyz;
+                    blockPos = (shadowModelView * (gbufferModelViewInverse * vec4(blockPos, 1.0))).xyz;
                 #endif
             #endif
 

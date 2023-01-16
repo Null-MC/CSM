@@ -103,7 +103,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset) {
 		float penumbraWidth = (shadowPos.z - blockerDistance) / blockerDistance;
 
 		// percentage-close filtering
-		pixelRadius *= min(penumbraWidth * 40.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+		pixelRadius *= min(penumbraWidth * 20.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
 
 		int pcfSampleCount = SHADOW_PCF_SAMPLES;
 		if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;

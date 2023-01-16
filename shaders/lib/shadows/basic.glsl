@@ -18,7 +18,7 @@ vec3 distort(const in vec3 v) {
 }
 
 #if defined RENDER_VERTEX && !defined RENDER_SHADOW
-	void ApplyShadows(const in vec4 viewPos) {
+	void ApplyShadows(const in vec3 localPos) {
 		// #if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
 		// 	//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
 		// 	//in other words, don't darken the back side of it unless something else is casting a shadow on it.
@@ -26,20 +26,12 @@ vec3 distort(const in vec3 v) {
 		// #endif
 
 		if (geoNoL > 0.0) { //vertex is facing towards the sun
-			vec4 playerPos = gbufferModelViewInverse * viewPos;
+			vec3 shadowViewPos = (shadowModelView * vec4(localPos, 1.0)).xyz;
 
-			shadowPos = (shadowProjection * (shadowModelView * playerPos)).xyz; //convert to shadow screen space
+			shadowPos = (shadowProjection * vec4(shadowViewPos, 1.0)).xyz; //convert to shadow screen space
 
-			#if SHADOW_TYPE == 2
-				float distortFactor = getDistortFactor(shadowPos.xy);
-				shadowPos = distort(shadowPos, distortFactor); //apply shadow distortion
-				shadowPos.z -= SHADOW_DISTORTED_BIAS * SHADOW_BIAS_SCALE * (distortFactor * distortFactor) / abs(geoNoL); //apply shadow bias
-			#elif SHADOW_TYPE == 1
-				//shadowPos.z *= 0.5;
-				float range = min(shadowDistance, far * SHADOW_CSM_FIT_FARSCALE);
-				float shadowResScale = range / shadowMapSize;
-				float bias = SHADOW_BASIC_BIAS * shadowResScale * SHADOW_BIAS_SCALE;
-				shadowPos.z -= min(bias / abs(geoNoL), 0.1); //apply shadow bias
+			#if SHADOW_TYPE == SHADOW_TYPE_DISTORTED
+				shadowPos = distort(shadowPos);
 			#endif
 
 			shadowPos = shadowPos * 0.5 + 0.5; //convert from -1 ~ +1 to 0 ~ 1
