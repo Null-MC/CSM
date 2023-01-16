@@ -26,26 +26,21 @@
 		#ifdef RENDER_TEXTURED
 			vLit = 1.0;
 		#else
-			#ifdef SHADOW_ENABLED
-				vec3 lightNormal = vNormal;
+			vLit = geoNoL;
 
-				#if defined FOLIAGE_UP && defined RENDER_TERRAIN
-					if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10004.0)
-						lightNormal = gbufferModelView[1].xyz;
-				#endif
-
-				vLit = dot(lightDir, lightNormal);
-			#else
-				vLit = geoNoL;
+			#if defined SHADOW_ENABLED && defined FOLIAGE_UP && defined RENDER_TERRAIN
+				if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10004.0)
+					vLit = dot(lightDir, gbufferModelView[1].xyz);
 			#endif
 		#endif
 
 		#if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
 			if (geoNoL > 0.0) {
-				float viewDist = length(viewPos);
-				float normalBias = viewDist * SHADOW_NORMAL_BIAS;
+				float viewDist = 1.0 + length(viewPos);
 
-	        	vec3 shadowViewPos = viewPos.xyz + vNormal * normalBias * max(1.0 - geoNoL, 0.0);
+	        	vec3 shadowViewPos = viewPos.xyz;
+	        	shadowViewPos += vNormal * viewDist * SHADOW_NORMAL_BIAS * max(1.0 - geoNoL, 0.0);
+
 				vec3 shadowLocalPos = (gbufferModelViewInverse * vec4(shadowViewPos, 1.0)).xyz;
 
 				ApplyShadows(shadowLocalPos);
