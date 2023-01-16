@@ -10,6 +10,7 @@ out vec4 glcolor;
 out vec3 vPos;
 out vec3 vNormal;
 out float geoNoL;
+out float vLit;
 
 in vec4 mc_Entity;
 in vec3 vaPosition;

@@ -10,6 +10,7 @@ in vec4 glcolor;
 in vec3 vPos;
 in vec3 vNormal;
 in float geoNoL;
+in float vLit;
 
 #ifdef SHADOW_ENABLED
     #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
