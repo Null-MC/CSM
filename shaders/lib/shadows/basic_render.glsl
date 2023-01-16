@@ -71,10 +71,6 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset) {
 
 #if SHADOW_FILTER == 2
 	// PCF + PCSS
-	//#define PCSS_NEAR 1.0
-	#define SHADOW_BLOCKER_SAMPLES 6
-	//#define SHADOW_LIGHT_SIZE 0.0002
-
 	float FindBlockerDistance(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
 		//float radius = SearchWidth(uvLightSize, shadowPos.z);
 		//float radius = 6.0; //SHADOW_LIGHT_SIZE * (shadowPos.z - PCSS_NEAR) / shadowPos.z;
@@ -91,14 +87,14 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset) {
 			}
 		}
 
-		return blockers > 0 ? avgBlockerDistance / blockers : -1.0;
+		return blockers > 0 ? avgBlockerDistance / blockers : 0.0;
 	}
 
 	float GetShadowing(const in vec3 shadowPos) {
 		vec2 pixelRadius = GetShadowPixelRadius(SHADOW_PCF_SIZE);
 
 		// blocker search
-		int blockerSampleCount = SHADOW_BLOCKER_SAMPLES;
+		int blockerSampleCount = SHADOW_PCSS_SAMPLES;
 		if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
 		float blockerDistance = FindBlockerDistance(shadowPos, pixelRadius, blockerSampleCount);
 		if (blockerDistance <= 0.0) return 1.0;
