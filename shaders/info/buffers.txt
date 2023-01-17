@@ -1,0 +1,2 @@
+colortex0		RGBA8		1.0		output
+colortex1		RGBA8		1.0		lighting

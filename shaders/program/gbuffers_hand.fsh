@@ -1,4 +1,5 @@
 #define RENDER_HAND
+#define RENDER_GBUFFER
 #define RENDER_FRAG
 
 #include "/lib/common.glsl"
@@ -77,19 +78,20 @@ uniform vec3 fogColor;
 #include "/lib/lighting.glsl"
 
 
-/* RENDERTARGETS: 0 */
+/* RENDERTARGETS: 0,1 */
 layout(location = 0) out vec4 outColor0;
+#ifdef SHADOW_BLUR
+	layout(location = 1) out vec4 outColor1;
+#endif
 
 void main() {
-	vec4 color = BasicLighting();
+	vec4 color = GetColor();
+	vec3 lightColor = GetShadowLightColor();
 
-	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CASCADE_TINT && defined SHADOW_ENABLED
-		color.rgb *= 1.0 - LOD_TINT_FACTOR * (1.0 - shadowTileColor);
+	#ifdef SHADOW_BLUR
+		outColor0 = color;
+		outColor1 = vec4(lightColor, color.a);
+	#else
+		outColor0 = GetFinalLighting(color, lightColor, vPos);
 	#endif
-	
-	ApplyFog(color);
-
-	color.rgb = LinearToRGB(color.rgb);
-
-	outColor0 = color;
 }

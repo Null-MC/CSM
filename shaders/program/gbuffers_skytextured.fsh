@@ -1,4 +1,5 @@
 #define RENDER_SKYTEXTURED
+#define RENDER_GBUFFER
 #define RENDER_FRAG
 
 #include "/lib/common.glsl"

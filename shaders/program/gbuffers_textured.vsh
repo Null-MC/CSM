@@ -1,4 +1,5 @@
 #define RENDER_TEXTURED
+#define RENDER_GBUFFER
 #define RENDER_VERTEX
 
 #include "/lib/common.glsl"

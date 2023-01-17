@@ -1,3 +1,16 @@
+screen.WORLD_OPTIONS=World
+screen.WORLD_OPTIONS.comment=Options for everything else.
+
+option.ENABLE_WAVING=Waving Plants
+option.ENABLE_WAVING.comment=When enabled, plants will wave using artificial wind.
+
+option.FOLIAGE_UP=Upward Normals
+option.FOLIAGE_UP.comment=Vegetation will be lit with upward normals.
+
+
+screen.SHADOW_OPTIONS=Shadows
+screen.SHADOW_OPTIONS.comment=Options for shadows.
+
 option.SHADOW_TYPE=Shadow Type
 option.SHADOW_TYPE.comment=The type of shadow mapping to use.
 value.SHADOW_TYPE.0=None
@@ -5,16 +18,11 @@ value.SHADOW_TYPE.1=Basic
 value.SHADOW_TYPE.2=Distorted
 value.SHADOW_TYPE.3=Cascaded
 
-
 option.shadowMapResolution=Shadow Resolution
 option.shadowMapResolution.comment=Resolution of the shadow map. Higher numbers mean more accurate shadows.
 
 option.shadowDistance=Shadow Distance
 option.shadowDistance.comment=How far away shadows will be rendered.
-
-
-screen.SHADOW_OPTIONS=Shadow Options
-screen.SHADOW_OPTIONS.comment=Options for shadows.
 
 option.SHADOW_FILTER=Filtering
 option.SHADOW_FILTER.comment=Type type of filtering to apply to shadow sampling.
@@ -74,6 +82,10 @@ option.SHADOW_CSM_FITRANGE.comment=When enabled, all but the nearest cascade wil
 option.SHADOW_CSM_TIGHTEN=Fit CSM to Frustum
 option.SHADOW_CSM_TIGHTEN.comment=When enabled, the shadows cascades will be tightly fit to the view frustum to improve quality. Applies to CSM only. NOTE: disables entity shadows because Optifine bugs!
 
+
+screen.SHADOW_FILTER_OPTIONS=Filtering
+screen.SHADOW_FILTER_OPTIONS.comment=Options for shadow filtering.
+
 option.SHADOW_PCF_SIZE=PCF Radius
 option.SHADOW_PCF_SIZE.comment=The radius of the shadow blurring using a block-sized scale.
 
@@ -86,18 +98,11 @@ option.SHADOW_PCSS_SAMPLES.comment=The number of samples to use for determining 
 option.SHADOW_ENABLE_HWCOMP=HW-Accelerated
 option.SHADOW_ENABLE_HWCOMP.comment=When enabled, shadows will leverage hardware-filtering for better quality and performance.
 
-
-screen.WORLD_OPTIONS=World Options
-screen.WORLD_OPTIONS.comment=Options for everything else.
-
-option.ENABLE_WAVING=Waving Plants
-option.ENABLE_WAVING.comment=When enabled, plants will wave using artificial wind.
-
-option.FOLIAGE_UP=Upward Normals
-option.FOLIAGE_UP.comment=Vegetation will be lit with upward normals.
+option.SHADOW_BLUR=Blur
+option.SHADOW_BLUR.comment=Applies a gaussian blur to the shadowing buffer.
 
 
-screen.DEBUG_OPTIONS=Debug Options
+screen.DEBUG_OPTIONS=Debug
 screen.DEBUG_OPTIONS.comment=Special options for debugging.
 
 option.DEBUG_SHADOW_BUFFER=Display

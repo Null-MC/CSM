@@ -52,8 +52,8 @@
 #endif
 
 #ifdef RENDER_FRAG
-	void ApplyFog(inout vec4 color) {
-		vec3 fogPos = vPos;
+	void ApplyFog(inout vec4 color, const in vec3 viewPos) {
+		vec3 fogPos = viewPos;
 		//if (fogShape == 1) fogPos.z = 0.0;
 		float fogF = clamp((length(fogPos) - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
 
@@ -64,41 +64,113 @@
 			color.a = mix(color.a, 1.0, fogF);
 	}
 
-	vec4 BasicLighting() {
-		vec4 albedo = texture(gtexture, texcoord) * glcolor;
-		albedo.rgb = RGBToLinear(albedo.rgb);
+	// vec4 BasicLighting() {
+	// 	vec4 albedo = texture(gtexture, texcoord) * glcolor;
+	// 	albedo.rgb = RGBToLinear(albedo.rgb);
 
-		#if !defined RENDER_WATER && !defined RENDER_HAND_WATER
-			if (albedo.a < alphaTestRef) {
-				discard;
-				return vec4(0.0);
-			}
+	// 	#if !defined RENDER_WATER && !defined RENDER_HAND_WATER
+	// 		if (albedo.a < alphaTestRef) {
+	// 			discard;
+	// 			return vec4(0.0);
+	// 		}
+	// 	#endif
+
+	// 	float shadow = 1.0;
+	// 	vec3 lightColor = vec3(1.0);
+
+	// 	#if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
+	// 		if (geoNoL > 0.0) {
+	// 			shadow = GetShadowing(shadowPos);
+
+	// 			#if SHADOW_COLORS == 1
+	// 				vec3 shadowColor = GetShadowColor(shadowPos);
+
+	// 				shadowColor = mix(vec3(1.0), shadowColor, shadow);
+
+	// 				//also make colors less intense when the block light level is high.
+	// 				//shadowColor = mix(shadowColor, vec3(1.0), lm.x);
+
+	// 				lightColor *= shadowColor;
+	// 			#endif
+	// 		}
+	// 	#endif
+
+	// 	vec3 lightFinal = lightColor * mix(max(vLit, 0.0) * shadow, 1.0, SHADOW_BRIGHTNESS);
+
+	// 	vec4 final = albedo;
+	// 	final.rgb *= lightFinal;
+	// 	return final;
+	// }
+
+	#ifdef RENDER_GBUFFER
+		vec4 GetColor() {
+			vec4 color = texture(gtexture, texcoord) * glcolor;
+
+			#if !defined RENDER_WATER && !defined RENDER_HAND_WATER
+				if (color.a < alphaTestRef) {
+					discard;
+					return vec4(0.0);
+				}
+			#endif
+
+			return color;
+		}
+
+		vec3 GetShadowLightColor() {
+			float shadow = 1.0;
+			vec3 lightColor = vec3(1.0);
+
+			#if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
+				if (geoNoL > 0.0) {
+					#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
+				        int tile = GetShadowCascade(shadowPos, SHADOW_PCF_SIZE);
+				        if (tile >= 0) {
+							shadow = GetShadowing(shadowPos, tile);
+
+							#if SHADOW_COLORS == SHADOW_COLOR_ENABLED
+								vec3 shadowColor = GetShadowColor(shadowPos, tile);
+
+								shadowColor = mix(vec3(1.0), shadowColor, shadow);
+
+								//also make colors less intense when the block light level is high.
+								//shadowColor = mix(shadowColor, vec3(1.0), lm.x);
+
+								lightColor *= shadowColor;
+							#endif
+				        }
+				    #else
+						shadow = GetShadowing(shadowPos);
+
+						#if SHADOW_COLORS == SHADOW_COLOR_ENABLED
+							vec3 shadowColor = GetShadowColor(shadowPos);
+
+							shadowColor = mix(vec3(1.0), shadowColor, shadow);
+
+							//also make colors less intense when the block light level is high.
+							//shadowColor = mix(shadowColor, vec3(1.0), lm.x);
+
+							lightColor *= shadowColor;
+						#endif
+				    #endif
+				}
+			#endif
+
+			return lightColor * mix(max(vLit, 0.0) * shadow, 1.0, SHADOW_BRIGHTNESS);
+		}
+	#endif
+
+	vec4 GetFinalLighting(const in vec4 color, const in vec3 shadowColor, const in vec3 viewPos) {
+		vec3 albedo = RGBToLinear(color.rgb);
+
+		#if SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CASCADE_TINT && defined SHADOW_ENABLED
+			albedo *= 1.0 - LOD_TINT_FACTOR * (1.0 - shadowTileColor);
 		#endif
 
-		float shadow = 1.0;
-		vec3 lightColor = vec3(1.0);
+		vec4 final = vec4(albedo * shadowColor, color.a);
 
-		#if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
-			if (geoNoL > 0.0) {
-				shadow = GetShadowing(shadowPos);
+		ApplyFog(final, viewPos);
 
-				#if SHADOW_COLORS == 1
-					vec3 shadowColor = GetShadowColor(shadowPos);
-
-					shadowColor = mix(vec3(1.0), shadowColor, shadow);
-
-					//also make colors less intense when the block light level is high.
-					//shadowColor = mix(shadowColor, vec3(1.0), lm.x);
-
-					lightColor *= shadowColor;
-				#endif
-			}
-		#endif
-
-		vec3 lightFinal = lightColor * mix(max(vLit, 0.0) * shadow, 1.0, SHADOW_BRIGHTNESS);
-
-		vec4 final = albedo;
-		final.rgb *= lightFinal;
+		final.rgb = LinearToRGB(final.rgb);
 		return final;
 	}
 #endif

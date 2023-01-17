@@ -11,11 +11,12 @@
 #define SHADOW_CSM_FITRANGE
 #define SHADOW_CSM_TIGHTEN
 #define SHADOW_CSM_OVERLAP
-#define SHADOW_FILTER 0 // [0 1 2]
-#define SHADOW_PCF_SIZE 0.020 // [0.005 0.010 0.015 0.020 0.025 0.030 0.035 0.040 0.045 0.050 0.055 0.060 0.065 0.070 0.075 0.080 0.085 0.090 0.095 0.100 0.120 0.140 0.160 0.180 0.200]
-#define SHADOW_PCF_SAMPLES 6 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
-#define SHADOW_PCSS_SAMPLES 4 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
+#define SHADOW_FILTER 2 // [0 1 2]
+#define SHADOW_PCF_SIZE 0.060 // [0.005 0.010 0.015 0.020 0.025 0.030 0.035 0.040 0.045 0.050 0.055 0.060 0.065 0.070 0.075 0.080 0.085 0.090 0.095 0.100 0.120 0.140 0.160 0.180 0.200]
+#define SHADOW_PCF_SAMPLES 4 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
+#define SHADOW_PCSS_SAMPLES 6 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
 //#define SHADOW_ENABLE_HWCOMP
+#define SHADOW_BLUR
 
 // World Options
 #define ENABLE_WAVING
@@ -67,7 +68,13 @@
 #endif
 #ifdef FOLIAGE_UP
 #endif
+#ifdef SHADOW_BLUR
+#endif
 
+
+#define rcp(x) (1.0 / (x))
+
+#define pow2(x) (x*x)
 
 float saturate(const in float x) {return clamp(x, 0.0, 1.0);}
 vec2 saturate(const in vec2 x) {return clamp(x, vec2(0.0), vec2(1.0));}
