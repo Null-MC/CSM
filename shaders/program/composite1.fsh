@@ -59,7 +59,7 @@ void main() {
 		#endif
 
 		vec3 clipPos = vec3(gl_FragCoord.xy / viewSize, depth) * 2.0 - 1.0;
-		vec3 viewPos = (gbufferProjectionInverse * vec4(clipPos, 1.0)).xyz;
+		vec3 viewPos = unproject(gbufferProjectionInverse * vec4(clipPos, 1.0));
 		final = GetFinalLighting(color, lightColor, viewPos, lightMap.xy, lightMap.z);
 	}
 	else {

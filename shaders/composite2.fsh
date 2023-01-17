@@ -1,4 +1,4 @@
 #version 430 compatibility
 
 #include "overworld.glsl"
-#include "/program/deferred.fsh"
+#include "/program/composite2.fsh"

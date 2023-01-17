@@ -167,8 +167,13 @@
             albedo *= 1.0 - LOD_TINT_FACTOR * (1.0 - shadowTileColor);
         #endif
 
-        vec3 blockLight = textureLod(colortex3, vec2(lmcoord.x, 1.0/32.0), 0).rgb;
-        vec3 skyLight = textureLod(colortex3, vec2(1.0/32.0, lmcoord.y), 0).rgb;
+        #ifdef RENDER_DEFERRED
+            vec3 blockLight = textureLod(colortex3, vec2(lmcoord.x, 1.0/32.0), 0).rgb;
+            vec3 skyLight = textureLod(colortex3, vec2(1.0/32.0, lmcoord.y), 0).rgb;
+        #else
+            vec3 blockLight = textureLod(lightmap, vec2(lmcoord.x, 1.0/32.0), 0).rgb;
+            vec3 skyLight = textureLod(lightmap, vec2(1.0/32.0, lmcoord.y), 0).rgb;
+        #endif
 
         blockLight = RGBToLinear(blockLight);
         skyLight = RGBToLinear(skyLight);
