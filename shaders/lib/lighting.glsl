@@ -9,7 +9,7 @@
 
         vec4 viewPos = gl_ModelViewMatrix * pos;
 
-        vPos = viewPos.xyz;// / viewPos.w;
+        vPos = viewPos.xyz;
 
         vNormal = gl_Normal;
 
@@ -64,44 +64,6 @@
             color.a = mix(color.a, 1.0, fogF);
     }
 
-    // vec4 BasicLighting() {
-    //  vec4 albedo = texture(gtexture, texcoord) * glcolor;
-    //  albedo.rgb = RGBToLinear(albedo.rgb);
-
-    //  #if !defined RENDER_WATER && !defined RENDER_HAND_WATER
-    //      if (albedo.a < alphaTestRef) {
-    //          discard;
-    //          return vec4(0.0);
-    //      }
-    //  #endif
-
-    //  float shadow = 1.0;
-    //  vec3 lightColor = vec3(1.0);
-
-    //  #if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
-    //      if (geoNoL > 0.0) {
-    //          shadow = GetShadowing(shadowPos);
-
-    //          #if SHADOW_COLORS == 1
-    //              vec3 shadowColor = GetShadowColor(shadowPos);
-
-    //              shadowColor = mix(vec3(1.0), shadowColor, shadow);
-
-    //              //also make colors less intense when the block light level is high.
-    //              //shadowColor = mix(shadowColor, vec3(1.0), lm.x);
-
-    //              lightColor *= shadowColor;
-    //          #endif
-    //      }
-    //  #endif
-
-    //  vec3 lightFinal = lightColor * mix(max(vLit, 0.0) * shadow, 1.0, SHADOW_BRIGHTNESS);
-
-    //  vec4 final = albedo;
-    //  final.rgb *= lightFinal;
-    //  return final;
-    // }
-
     #ifdef RENDER_GBUFFER
         vec4 GetColor() {
             vec4 color = texture(gtexture, texcoord);
@@ -154,7 +116,6 @@
                     }
                 #endif
 
-                //return mix(shadow * max(vLit, 0.0), 1.0, SHADOW_BRIGHTNESS);
                 return shadow * max(vLit, 0.0);
             }
         #endif

@@ -17,10 +17,13 @@ const bool colortex2MipmapEnabled = false;
 const bool colortex2Clear = true;
 
 
+// World Options
+#define ENABLE_WAVING
+//#define FOLIAGE_UP
 
-#define SHADOW_TYPE 3 // [0 1 2 3]
 
 // Shadow Options
+#define SHADOW_TYPE 3 // [0 1 2 3]
 //#define SHADOW_EXCLUDE_ENTITIES
 //#define SHADOW_EXCLUDE_FOLIAGE
 #define SHADOW_COLORS 0 // [0 1 2]
@@ -39,9 +42,6 @@ const bool colortex2Clear = true;
 //#define SHADOW_ENABLE_HWCOMP
 #define SHADOW_BLUR
 
-// World Options
-#define ENABLE_WAVING
-//#define FOLIAGE_UP
 
 // Debug Options
 #define DEBUG_SHADOW_BUFFER 0 // [0 1 2 3]
@@ -51,7 +51,6 @@ const bool colortex2Clear = true;
 
 // INTERNAL SETTINGS
 #define SHADOW_ENABLED
-//#define LIGHTING_TYPE 0 // [0 1 2]
 #define SHADOW_BASIC_BIAS 0.035
 #define SHADOW_DISTORTED_BIAS 0.03
 #define SHADOW_CSM_FIT_FARSCALE 1.1
@@ -72,15 +71,8 @@ const bool colortex2Clear = true;
     #undef SHADOW_PCSS_SAMPLES
 #endif
 
-// #if SHADOW_TYPE != 3
-// 	#undef DEBUG_CASCADE_TINT
-// 	#undef SHADOW_CSM_FITRANGE
-// 	#undef SHADOW_CSM_TIGHTEN
-// #endif
-
 #if MC_VERSION < 11700
     const float alphaTestRef = 0.1;
-    //const vec3 chunkOffset = vec3(0.0);
 #endif
 
 #ifdef SHADOW_EXCLUDE_ENTITIES
