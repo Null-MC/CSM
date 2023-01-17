@@ -10,6 +10,8 @@ varying vec4 glcolor;
 
 uniform sampler2D gtexture;
 
+uniform float alphaTestRef;
+
 
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 outColor0;
