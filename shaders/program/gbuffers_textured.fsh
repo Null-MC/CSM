@@ -77,20 +77,27 @@ uniform vec3 fogColor;
 #include "/lib/lighting.glsl"
 
 
-/* RENDERTARGETS: 0,1 */
+/* RENDERTARGETS: 0,1,2 */
 layout(location = 0) out vec4 outColor0;
 #ifdef SHADOW_BLUR
     layout(location = 1) out vec4 outColor1;
+    layout(location = 2) out vec4 outColor2;
 #endif
 
 void main() {
     vec4 color = GetColor();
-    vec3 lightColor = GetShadowLightColor();
+
+    #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
+        vec3 lightColor = GetFinalShadowColor();
+    #else
+        vec3 lightColor = vec3(GetFinalShadowFactor());
+    #endif
 
     #ifdef SHADOW_BLUR
         outColor0 = color;
-        outColor1 = vec4(lightColor, color.a);
+        outColor1 = vec4(lightColor, 1.0);
+        outColor2 = vec4(lmcoord, glcolor.a, 1.0);
     #else
-        outColor0 = GetFinalLighting(color, lightColor, vPos);
+        outColor0 = GetFinalLighting(color, lightColor, vPos, lmcoord, glcolor.a);
     #endif
 }

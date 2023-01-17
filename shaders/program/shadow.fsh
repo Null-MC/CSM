@@ -30,7 +30,7 @@ void main() {
 		if (clamp(p, vec2(0.0), vec2(0.5)) != p) discard;
 	#endif
 
-	vec4 color = texture(gtexture, gTexcoord) * gColor;
+	vec4 color = texture(gtexture, gTexcoord);
 
 	if (renderStage != MC_RENDER_STAGE_TERRAIN_TRANSLUCENT) {
 		if (color.a < alphaTestRef) {
@@ -38,6 +38,14 @@ void main() {
 			return;
 		}
 	}
+
+	color.rgb *= gColor.rgb;
+
+	color.rgb = RGBToLinear(color.rgb);
+
+	color.rgb = mix(color.rgb, vec3(1.0), pow2(color.a));
+
+	color.rgb = LinearToRGB(color.rgb);
 
 	outColor0 = color;
 }

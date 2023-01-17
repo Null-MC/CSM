@@ -2,14 +2,14 @@ float Gaussian(const in float sigma, const in float x) {
     return exp(-pow2(x) / (2.0 * pow2(sigma)));
 }
 
-float BilateralGaussianDepthBlur_9x(const in sampler2D blendSampler, const in vec2 blendTexSize, const in sampler2D depthSampler, const in vec2 depthTexSize, const in float linearDepth, const in float sigmaV) {
-    float g_sigmaV = 0.03 * pow2(sigmaV) + 0.001;
+float BilateralGaussianDepthBlur_5x(const in vec2 texcoord, const in sampler2D blendSampler, const in vec2 blendTexSize, const in sampler2D depthSampler, const in vec2 depthTexSize, const in float linearDepth, const in float sigmaV) {
+    float g_sigmaV = 0.03 * pow2(sigmaV) + 0.1;
 
     float g_sigmaX = 3.0;
     float g_sigmaY = 3.0;
 
-    const float c_halfSamplesX = 4.0;
-    const float c_halfSamplesY = 4.0;
+    const float c_halfSamplesX = 2.0;
+    const float c_halfSamplesY = 2.0;
 
     float total = 0.0;
     float accum = 0.0;
@@ -30,7 +30,7 @@ float BilateralGaussianDepthBlur_9x(const in sampler2D blendSampler, const in ve
             ivec2 iTexDepth = ivec2(sampleTex * depthTexSize);
             float sampleDepth = texelFetch(depthSampler, iTexDepth, 0).r;
             float sampleLinearDepth = linearizeDepthFast(sampleDepth, near, far);
-            
+                        
             float fv = Gaussian(g_sigmaV, abs(sampleLinearDepth - linearDepth));
             
             float weight = fx*fy*fv;
@@ -39,7 +39,7 @@ float BilateralGaussianDepthBlur_9x(const in sampler2D blendSampler, const in ve
         }
     }
     
-    if (total <= EPSILON) return 1.0;
+    if (total <= EPSILON) return 0.0;
     return accum / total;
 }
 
@@ -80,7 +80,6 @@ vec3 BilateralGaussianDepthBlurRGB_5x(const in vec2 texcoord, const in sampler2D
         }
     }
     
-    //if (dot(accum, accum) <= EPSILON) return vec3(1.0);
     if (total <= EPSILON) return vec3(0.0);
     return accum / total;
 }

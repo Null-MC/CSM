@@ -34,11 +34,13 @@ layout(location = 0) out vec4 outColor0;
 
 void main() {
 	#if DEBUG_SHADOW_BUFFER == 1
-		vec3 color = texture(shadowcolor0, texcoord).rgb;
+		vec4 shadowColor = textureLod(shadowcolor0, texcoord, 0);
+		//shadowColor.rgb = mix(shadowColor.rgb, vec3(0.0), pow2(shadowColor.a));
+		vec3 color = shadowColor.rgb;
 	#elif DEBUG_SHADOW_BUFFER == 2
-		vec3 color = texture(shadowtex0, texcoord).rrr;
+		vec3 color = textureLod(shadowtex0, texcoord, 0).rrr;
 	#elif DEBUG_SHADOW_BUFFER == 3
-		vec3 color = texture(shadowtex1, texcoord).rrr;
+		vec3 color = textureLod(shadowtex1, texcoord, 0).rrr;
 	#else
 		const vec3 color = vec3(0.0);
 	#endif

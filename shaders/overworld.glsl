@@ -1,9 +1,15 @@
 #define WORLD_OVERWORLD
+#define SHADOW_ENABLED
 
 /*
 const int shadowtex0Format = R32F;
 const int shadowtex1Format = R32F;
+const int shadowcolor0Format = RGBA8;
 */
+
+const bool shadowcolor0Nearest = false;
+const vec4 shadowcolor0ClearColor = vec4(1.0, 1.0, 1.0, 0.0);
+const bool shadowcolor0Clear = true;
 
 const float shadowDistanceRenderMul = 1.0;
 

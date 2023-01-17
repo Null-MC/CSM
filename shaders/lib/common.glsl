@@ -1,9 +1,30 @@
+/*
+const int colortex0Format = RGBA8;
+const int colortex1Format = RGBA8;
+const int colortex2Format = RGBA8;
+*/
+
+const vec4 colortex0ClearColor = vec4(0.0, 0.0, 0.0, 0.0);
+const bool colortex0MipmapEnabled = false;
+const bool colortex0Clear = true;
+
+const vec4 colortex1ClearColor = vec4(0.0, 0.0, 0.0, 0.0);
+const bool colortex1MipmapEnabled = false;
+const bool colortex1Clear = true;
+
+const vec4 colortex2ClearColor = vec4(0.0, 0.0, 0.0, 0.0);
+const bool colortex2MipmapEnabled = false;
+const bool colortex2Clear = true;
+
+
+
 #define SHADOW_TYPE 3 // [0 1 2 3]
 
 // Shadow Options
 //#define SHADOW_EXCLUDE_ENTITIES
 //#define SHADOW_EXCLUDE_FOLIAGE
 #define SHADOW_COLORS 0 // [0 1 2]
+//#define SHADOW_COLOR_BLEND
 #define SHADOW_BRIGHTNESS 0.10 // [0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00]
 #define SHADOW_BIAS_SCALE 1.0 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5]
 #define SHADOW_NORMAL_BIAS 0.006
@@ -69,6 +90,8 @@
 #ifdef FOLIAGE_UP
 #endif
 #ifdef SHADOW_BLUR
+#endif
+#ifdef SHADOW_COLOR_BLEND
 #endif
 
 

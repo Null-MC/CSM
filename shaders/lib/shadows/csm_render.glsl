@@ -64,60 +64,68 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
 }
 
 #if SHADOW_FILTER != 0
-    float GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount, const in int tile) {
-        //vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize[tile]) * shadowPixelSize;
+    #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
+        vec3 GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount, const in int tile) {
+            float bias = GetShadowBias(tile, geoNoL);
+            vec3 shadowColor = vec3(0.0);
 
-        float bias = GetShadowBias(tile, geoNoL);
+            for (int i = 0; i < sampleCount; i++) {
+                vec3 noisePos = vec3(gl_FragCoord.xy, i);
+                vec2 pixelOffset = (hash23(noisePos)*2.0 - 1.0) * pixelRadius;
+                vec4 sampleColor = vec4(1.0);
 
-        float shadow = 0.0;
-        for (int i = 0; i < sampleCount; i++) {
-            vec2 pixelOffset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
-            shadow += 1.0 - CompareDepth(shadowPos, pixelOffset, bias);
+                float depthOpaque = textureLod(shadowtex1, shadowPos.xy + pixelOffset, 0).r;
+
+                if (shadowPos.z - bias > depthOpaque) sampleColor.rgb = vec3(0.0);
+                else {
+                    float depthTrans = textureLod(shadowtex0, shadowPos.xy + pixelOffset, 0).r;
+                    if (shadowPos.z - bias < depthTrans) sampleColor.rgb = vec3(1.0);
+                    else {
+                        sampleColor = textureLod(shadowcolor0, shadowPos.xy + pixelOffset, 0);
+                        sampleColor.rgb = RGBToLinear(sampleColor.rgb);
+                        
+                        sampleColor.rgb = mix(sampleColor.rgb, vec3(0.0), pow2(sampleColor.a));
+                    }
+                }
+
+                shadowColor += sampleColor.rgb;
+            }
+
+            return shadowColor / sampleCount;
         }
+    #else
+        float GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount, const in int tile) {
+            //vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize[tile]) * shadowPixelSize;
 
-        return shadow / sampleCount;
-        //return smoothstep(0.0, 1.0, shadow / sampleCount);
-    }
-#endif
+            float bias = GetShadowBias(tile, geoNoL);
 
-#if SHADOW_COLORS == 1
-    vec3 GetShadowColor(const in vec3 shadowPos[4], const in int tile) {
-        //int tile = GetShadowCascade(shadowPos, SHADOW_PCF_SIZE);
-        //if (tile < 0) return vec3(1.0);
+            float shadow = 0.0;
+            for (int i = 0; i < sampleCount; i++) {
+                vec2 pixelOffset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
+                shadow += 1.0 - CompareDepth(shadowPos, pixelOffset, bias);
+            }
 
-        //when colored shadows are enabled and there's nothing OPAQUE between us and the sun,
-        //perform a 2nd check to see if there's anything translucent between us and the sun.
-        float depth = texture(shadowtex0, shadowPos[tile].xy).r;
-
-        if (depth + EPSILON >= 1.0 || depth >= shadowPos[tile].z) return vec3(1.0);
-
-        //surface has translucent object between it and the sun. modify its color.
-        //if the block light is high, modify the color less.
-        vec4 shadowLightColor = texture(shadowcolor0, shadowPos[tile].xy);
-        vec3 color = RGBToLinear(shadowLightColor.rgb);
-
-        //make colors more intense when the shadow light color is more opaque.
-        return mix(vec3(1.0), color, shadowLightColor.a);
-    }
+            return shadow / sampleCount;
+            //return smoothstep(0.0, 1.0, shadow / sampleCount);
+        }
+    #endif
 #endif
 
 #if SHADOW_FILTER == 2
     // PCF + PCSS
     float FindBlockerDistance(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
-        //vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize[tile]) * shadowPixelSize;
-        
-        // NOTE: This optimization doesn't really help here rn since the search radius is fixed
-        //if (blockRadius <= shadowPixelSize) sampleCount = 1;
-
-        //float blockRadius = SearchWidth(uvLightSize, shadowPos.z);
-        //float blockRadius = 6.0; //SHADOW_LIGHT_SIZE * (shadowPos.z - PCSS_NEAR) / shadowPos.z;
         float avgBlockerDistance = 0;
         int blockers = 0;
 
         for (int i = 0; i < sampleCount; i++) {
             vec3 noiseVec = vec3(gl_FragCoord.xy, i) + vec3(1.1, 2.2, 3.3);
             vec2 pixelOffset = (hash23(noiseVec)*2.0 - 1.0) * pixelRadius;
-            float texDepth = SampleDepth(shadowPos.xy, pixelOffset);
+
+            #if SHADOW_COLORS == SHADOW_COLOR_IGNORED
+                float texDepth = texture(shadowtex1, shadowPos.xy + pixelOffset).r;
+            #else
+                float texDepth = texture(shadowtex0, shadowPos.xy + pixelOffset).r;
+            #endif
 
             if (texDepth < shadowPos.z) { // - directionalLightShadowMapBias
                 avgBlockerDistance += texDepth;
@@ -129,51 +137,105 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
         return blockers > 0 ? avgBlockerDistance / blockers : 0.0;
     }
 
-    float GetShadowing(const in vec3 shadowPos[4], const in int tile) {
-        //int tile = GetShadowCascade(shadowPos, SHADOW_PCF_SIZE);
-        //if (tile < 0) return 1.0;
+    #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
+        vec3 GetShadowColor(const in vec3 shadowPos[4], const in int tile) {
+            vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
 
-        //vec2 pixelPerBlockScale = (cascadeTexSize / shadowProjectionSize[tile]) * shadowPixelSize;
-        vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
+            // blocker search
+            int blockerSampleCount = SHADOW_PCSS_SAMPLES;
+            if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
+            float blockerDistance = FindBlockerDistance(shadowPos[tile], pixelRadius, blockerSampleCount);
 
-        // blocker search
-        int blockerSampleCount = SHADOW_PCSS_SAMPLES;
-        //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
-        float blockerDistance = FindBlockerDistance(shadowPos[tile], pixelRadius, blockerSampleCount);
-        if (blockerDistance <= 0.0) return 1.0;
-        //if (blockerDistance >= 1.0) return 0.0;
+            if (blockerDistance <= 0.0) {
+                float bias = GetShadowBias(tile, geoNoL);
 
-        // penumbra estimation
-        float penumbraWidth = (shadowPos[tile].z - blockerDistance) / blockerDistance;
+                //float depthOpaque = textureLod(shadowtex1, shadowPos.xy, 0).r;
+                //if (shadowPos.z - bias > depthOpaque) return vec3(0.0);
 
-        // percentage-close filtering
-        pixelRadius *= min(penumbraWidth * 20.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+                float depthTrans = textureLod(shadowtex0, shadowPos[tile].xy, 0).r;
+                if (shadowPos[tile].z - bias < depthTrans) return vec3(1.0);
 
-        int pcfSampleCount = SHADOW_PCF_SAMPLES;
-        //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
+                vec4 shadowColor = textureLod(shadowcolor0, shadowPos[tile].xy, 0);
+                shadowColor.rgb = RGBToLinear(shadowColor.rgb);
 
-        return 1.0 - GetShadowing_PCF(shadowPos[tile], pixelRadius, pcfSampleCount, tile);
-    }
+                shadowColor.rgb = mix(shadowColor.rgb, vec3(0.0), pow2(shadowColor.a));
+                
+                return shadowColor.rgb;
+            }
+
+            // penumbra estimation
+            float penumbraWidth = (shadowPos[tile].z - blockerDistance) / blockerDistance;
+
+            // percentage-close filtering
+            pixelRadius *= min(penumbraWidth * 20.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+
+            int pcfSampleCount = SHADOW_PCF_SAMPLES;
+            if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
+            return GetShadowing_PCF(shadowPos[tile], pixelRadius, pcfSampleCount, tile);
+        }
+    #else
+        float GetShadowFactor(const in vec3 shadowPos[4], const in int tile) {
+            vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
+
+            // blocker search
+            int blockerSampleCount = SHADOW_PCSS_SAMPLES;
+            //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
+            float blockerDistance = FindBlockerDistance(shadowPos[tile], pixelRadius, blockerSampleCount);
+            if (blockerDistance <= 0.0) return 1.0;
+
+            // penumbra estimation
+            float penumbraWidth = (shadowPos[tile].z - blockerDistance) / blockerDistance;
+
+            // percentage-close filtering
+            pixelRadius *= min(penumbraWidth * 20.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+
+            int pcfSampleCount = SHADOW_PCF_SAMPLES;
+            //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
+            return 1.0 - GetShadowing_PCF(shadowPos[tile], pixelRadius, pcfSampleCount, tile);
+        }
+    #endif
 #elif SHADOW_FILTER == 1
     // PCF
-    float GetShadowing(const in vec3 shadowPos[4], const in int tile) {
-        //int tile = GetShadowCascade(shadowPos, SHADOW_PCF_SIZE);
-        //if (tile < 0) return 1.0; // TODO: or 0?
+    #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
+        vec3 GetShadowColor(const in vec3 shadowPos[4], const in int tile) {
+            vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
+            
+            int sampleCount = SHADOW_PCF_SAMPLES;
+            //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
+            return GetShadowing_PCF(shadowPos[tile], pixelRadius, sampleCount, tile);
+        }
+    #else
+        float GetShadowFactor(const in vec3 shadowPos[4], const in int tile) {
+            vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
 
-        int sampleCount = SHADOW_PCF_SAMPLES;
-        vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
-        //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
-
-        return 1.0 - GetShadowing_PCF(shadowPos[tile], pixelRadius, sampleCount, tile);
-        //return 1.0 - max(GetShadowing_PCF(shadowPos[tile], SHADOW_PCF_SIZE, sampleCount, tile) - 0.5*min(1.0 - geoNoL, 1.0), 0.0);
-    }
+            int sampleCount = SHADOW_PCF_SAMPLES;
+            //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
+            return 1.0 - GetShadowing_PCF(shadowPos[tile], pixelRadius, sampleCount, tile);
+        }
+    #endif
 #elif SHADOW_FILTER == 0
     // Unfiltered
-    float GetShadowing(const in vec3 shadowPos[4], const in int tile) {
-        //int tile = GetShadowCascade(shadowPos, SHADOW_PCF_SIZE);
-        //if (tile < 0) return 1.0; // TODO: or 0?
+    #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
+        vec3 GetShadowColor(const in vec3 shadowPos[4], const in int tile) {
+            float bias = GetShadowBias(tile, geoNoL);
 
-        float bias = GetShadowBias(tile, geoNoL);
-        return CompareDepth(shadowPos[tile], vec2(0.0), bias);
-    }
+            float depthOpaque = texture(shadowtex1, shadowPos[tile].xy).r;
+            if (shadowPos[tile].z - bias > depthOpaque) return vec3(0.0);
+
+            float depthTrans = texture(shadowtex0, shadowPos[tile].xy).r;
+            if (shadowPos[tile].z - bias < depthTrans) return vec3(1.0);
+
+            vec4 shadowColor = texture(shadowcolor0, shadowPos[tile].xy);
+            shadowColor.rgb = RGBToLinear(shadowColor.rgb);
+
+            shadowColor.rgb = mix(shadowColor.rgb, vec3(0.0), pow2(shadowColor.a));
+
+            return shadowColor.rgb;
+        }
+    #else
+        float GetShadowFactor(const in vec3 shadowPos[4], const in int tile) {
+            float bias = GetShadowBias(tile, geoNoL);
+            return CompareDepth(shadowPos[tile], vec2(0.0), bias);
+        }
+    #endif
 #endif
