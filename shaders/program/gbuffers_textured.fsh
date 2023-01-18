@@ -95,7 +95,7 @@ layout(location = 0) out vec4 outColor0;
 #endif
 
 void main() {
-    vec4 color = GetColor();
+    vec4 color = GetColor() * glcolor;
 
     #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
         vec3 lightColor = GetFinalShadowColor();
@@ -106,7 +106,7 @@ void main() {
     #ifdef SHADOW_BLUR
         outColor0 = color;
         outColor1 = vec4(lightColor, 1.0);
-        outColor2 = vec4(lmcoord, glcolor.a, 1.0);
+        outColor2 = vec4(lmcoord, 1.0, 1.0);
     #else
         outColor0 = GetFinalLighting(color, lightColor, vPos, lmcoord, glcolor.a);
     #endif
