@@ -33,6 +33,8 @@ uniform float fogEnd;
 uniform int fogShape;
 uniform int fogMode;
 
+uniform float blindness;
+
 #if MC_VERSION >= 11700
 	uniform float alphaTestRef;
 #endif
