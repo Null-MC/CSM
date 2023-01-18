@@ -114,3 +114,6 @@ value.DEBUG_SHADOW_BUFFER.3=shadowtex1
 
 option.DEBUG_CASCADE_TINT=Tint Cascades
 option.DEBUG_CASCADE_TINT.comment=When enabled, shadow casters will show their cascade level by tint coloring. Applies to CSM only.
+
+option.IS_IRIS=Using Iris?
+option.IS_IRIS.comment=Disable this option if you are using Optifine.
