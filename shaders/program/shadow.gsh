@@ -92,16 +92,14 @@ void main() {
                 #endif
             }
 
-            #ifndef IRIS_FEATURE_SSBO
+            #ifdef IRIS_FEATURE_SSBO
+                vec2 shadowTilePos = shadowProjectionPos[c];
+            #else
                 vec2 shadowTilePos = GetShadowTilePos(c);
             #endif
 
             for (int v = 0; v < 3; v++) {
-                #ifdef IRIS_FEATURE_SSBO
-                    gShadowTilePos = shadowProjectionPos[c];
-                #else
-                    gShadowTilePos = shadowTilePos;
-                #endif
+                gShadowTilePos = shadowTilePos;
 
                 gTexcoord = vTexcoord[v];
                 gColor = vColor[v];
