@@ -4,7 +4,7 @@ const int colortex1Format = RGBA8;
 const int colortex2Format = RGBA8;
 */
 
-const vec4 colortex0ClearColor = vec4(0.0, 0.0, 0.0, 0.0);
+//const vec4 colortex0ClearColor = vec4(0.0, 0.0, 0.0, 0.0);
 const bool colortex0MipmapEnabled = false;
 const bool colortex0Clear = true;
 
@@ -26,7 +26,7 @@ const bool colortex2Clear = true;
 #define SHADOW_TYPE 3 // [0 1 2 3]
 //#define SHADOW_EXCLUDE_ENTITIES
 //#define SHADOW_EXCLUDE_FOLIAGE
-#define SHADOW_COLORS 0 // [0 1 2]
+#define SHADOW_COLORS 2 // [0 1 2]
 //#define SHADOW_COLOR_BLEND
 #define SHADOW_BRIGHTNESS 0.10 // [0.00 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00]
 #define SHADOW_BIAS_SCALE 1.0 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5]
@@ -36,12 +36,13 @@ const bool colortex2Clear = true;
 #define SHADOW_CSM_TIGHTEN
 #define SHADOW_CSM_OVERLAP
 #define SHADOW_FILTER 2 // [0 1 2]
-#define SHADOW_PCF_SIZE 0.060 // [0.005 0.010 0.015 0.020 0.025 0.030 0.035 0.040 0.045 0.050 0.055 0.060 0.065 0.070 0.075 0.080 0.085 0.090 0.095 0.100 0.120 0.140 0.160 0.180 0.200]
+#define SHADOW_PCF_SIZE 60 // [5 10 15 20 25 30 35 40 45 50 60 70 80 90 100 120 140 160 180 200 250 300 350 400 450 500 600 700 800]
 #define SHADOW_PCF_SAMPLES 4 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
 #define SHADOW_PCSS_SAMPLES 6 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
 //#define SHADOW_ENABLE_HWCOMP
 #define SHADOW_BLUR
 
+const float ShadowPCFSize = SHADOW_PCF_SIZE * 0.001;
 
 // Debug Options
 #define DEBUG_SHADOW_BUFFER 0 // [0 1 2 3]
@@ -51,7 +52,6 @@ const bool colortex2Clear = true;
 
 // INTERNAL SETTINGS
 #define IS_IRIS
-#define SHADOW_ENABLED
 #define SHADOW_BASIC_BIAS 0.035
 #define SHADOW_DISTORTED_BIAS 0.03
 #define SHADOW_CSM_FIT_FARSCALE 1.1

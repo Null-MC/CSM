@@ -139,7 +139,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
 
     #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
         vec3 GetShadowColor(const in vec3 shadowPos[4], const in int tile) {
-            vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
+            vec2 pixelRadius = GetPixelRadius(ShadowPCFSize, tile);
 
             // blocker search
             int blockerSampleCount = SHADOW_PCSS_SAMPLES;
@@ -175,7 +175,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
         }
     #else
         float GetShadowFactor(const in vec3 shadowPos[4], const in int tile) {
-            vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
+            vec2 pixelRadius = GetPixelRadius(ShadowPCFSize, tile);
 
             // blocker search
             int blockerSampleCount = SHADOW_PCSS_SAMPLES;
@@ -198,7 +198,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
     // PCF
     #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
         vec3 GetShadowColor(const in vec3 shadowPos[4], const in int tile) {
-            vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
+            vec2 pixelRadius = GetPixelRadius(ShadowPCFSize, tile);
             
             int sampleCount = SHADOW_PCF_SAMPLES;
             //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
@@ -206,7 +206,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
         }
     #else
         float GetShadowFactor(const in vec3 shadowPos[4], const in int tile) {
-            vec2 pixelRadius = GetPixelRadius(SHADOW_PCF_SIZE, tile);
+            vec2 pixelRadius = GetPixelRadius(ShadowPCFSize, tile);
 
             int sampleCount = SHADOW_PCF_SAMPLES;
             //if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;

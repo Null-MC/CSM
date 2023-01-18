@@ -13,7 +13,7 @@ out vec3 vNormal;
 out float geoNoL;
 out float vLit;
 
-#ifdef SHADOW_ENABLED
+#ifdef WORLD_SHADOW_ENABLED
 	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 		out vec3 shadowPos[4];
 		flat out int shadowTile;
@@ -32,7 +32,7 @@ uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
 
 
-#ifdef SHADOW_ENABLED
+#ifdef WORLD_SHADOW_ENABLED
 	uniform mat4 shadowModelView;
 	uniform mat4 shadowProjection;
 	uniform vec3 shadowLightPosition;

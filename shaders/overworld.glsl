@@ -1,5 +1,7 @@
 #define WORLD_OVERWORLD
-#define SHADOW_ENABLED
+#define WORLD_SKY_ENABLED
+#define WORLD_SHADOW_ENABLED
+//#define SHADOW_ENABLED
 
 /*
 const int shadowtex0Format = R32F;

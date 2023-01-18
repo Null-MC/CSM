@@ -13,7 +13,7 @@ in vec3 vNormal;
 in float geoNoL;
 in float vLit;
 
-#ifdef SHADOW_ENABLED
+#ifdef WORLD_SHADOW_ENABLED
     #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
         in vec3 shadowPos[4];
         flat in int shadowTile;
@@ -52,7 +52,7 @@ uniform sampler2D gtexture;
     uniform int fogMode;
 #endif 
 
-#ifdef SHADOW_ENABLED
+#ifdef WORLD_SHADOW_ENABLED
     uniform sampler2D shadowcolor0;
     uniform sampler2D shadowtex0;
     uniform sampler2D shadowtex1;
@@ -74,7 +74,7 @@ uniform sampler2D gtexture;
 
 #include "/lib/noise.glsl"
 
-#ifdef SHADOW_ENABLED
+#ifdef WORLD_SHADOW_ENABLED
     #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
         #include "/lib/shadows/csm.glsl"
         #include "/lib/shadows/csm_render.glsl"

@@ -13,21 +13,30 @@
 
         vNormal = normalize(gl_NormalMatrix * gl_Normal);
 
-        vec3 lightDir = normalize(shadowLightPosition);
-        geoNoL = dot(lightDir, vNormal);
+        #ifdef WORLD_SKY_ENABLED
+            vec3 lightDir = normalize(shadowLightPosition);
+            geoNoL = dot(lightDir, vNormal);
 
-        #ifdef RENDER_TEXTURED
-            vLit = 1.0;
-        #else
-            vLit = geoNoL;
+            #ifdef RENDER_TEXTURED
+                vLit = 1.0;
+            #else
+                vLit = geoNoL;
 
-            #if defined SHADOW_ENABLED && defined FOLIAGE_UP && defined RENDER_TERRAIN
-                if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10004.0)
-                    vLit = dot(lightDir, gbufferModelView[1].xyz);
+                #if defined RENDER_TERRAIN && defined FOLIAGE_UP
+                    if (mc_Entity.x >= 10001.0 && mc_Entity.x <= 10004.0)
+                        vLit = dot(lightDir, gbufferModelView[1].xyz);
+                #endif
             #endif
+        #else
+            geoNoL = 1.0;
+            vLit = 1.0;
         #endif
 
-        #if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
+        #if defined WORLD_SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
+            #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
+                shadowTile = -1;
+            #endif
+
             if (geoNoL > 0.0) {
                 float viewDist = 1.0 + length(viewPos.xyz);
 
@@ -115,6 +124,12 @@
 
             color.rgb *= glcolor.rgb;
 
+            #if defined WORLD_SHADOW_ENABLED && SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CASCADE_TINT && defined SHADOW_BLUR
+                color.rgb = RGBToLinear(color.rgb);
+                color.rgb *= 1.0 - LOD_TINT_FACTOR * (1.0 - GetShadowTileColor(shadowTile));
+                color.rgb = LinearToRGB(color.rgb);
+            #endif
+
             return color;
         }
 
@@ -122,10 +137,10 @@
             vec3 GetFinalShadowColor() {
                 vec3 shadowColor = vec3(1.0);
 
-                #if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
+                #if defined WORLD_SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
                     if (geoNoL > 0.0) {
                         #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
-                            int tile = GetShadowCascade(shadowPos, SHADOW_PCF_SIZE);
+                            int tile = GetShadowCascade(shadowPos, ShadowPCFSize);
 
                             if (tile >= 0)
                                 shadowColor = GetShadowColor(shadowPos, tile);
@@ -141,10 +156,10 @@
             float GetFinalShadowFactor() {
                 float shadow = 1.0;
 
-                #if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
+                #if defined WORLD_SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
                     if (geoNoL > 0.0) {
                         #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
-                            int tile = GetShadowCascade(shadowPos, SHADOW_PCF_SIZE);
+                            int tile = GetShadowCascade(shadowPos, ShadowPCFSize);
 
                             if (tile >= 0)
                                 shadow = GetShadowFactor(shadowPos, tile);
@@ -163,8 +178,8 @@
         vec4 GetFinalLighting(const in vec4 color, const in vec3 shadowColor, const in vec3 localPos, const in vec2 lmcoord, const in float occlusion) {
             vec3 albedo = RGBToLinear(color.rgb);
 
-            #if SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CASCADE_TINT && defined SHADOW_ENABLED
-                albedo *= 1.0 - LOD_TINT_FACTOR * (1.0 - shadowTileColor);
+            #if defined WORLD_SHADOW_ENABLED && SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CASCADE_TINT && !defined RENDER_CLOUDS && !defined RENDER_COMPOSITE
+                albedo *= 1.0 - LOD_TINT_FACTOR * (1.0 - GetShadowTileColor(shadowTile));
             #endif
 
             #ifdef IS_IRIS

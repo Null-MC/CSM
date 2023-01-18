@@ -17,7 +17,7 @@ in vec4 mc_Entity;
 in vec3 vaPosition;
 in vec3 at_midBlock;
 
-#ifdef SHADOW_ENABLED
+#ifdef WORLD_SHADOW_ENABLED
 	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 		out vec3 shadowPos[4];
 		flat out int shadowTile;
@@ -41,7 +41,7 @@ uniform vec3 cameraPosition;
 	uniform vec3 chunkOffset;
 #endif
 
-#ifdef SHADOW_ENABLED
+#ifdef WORLD_SHADOW_ENABLED
 	uniform mat4 shadowModelView;
 	uniform mat4 shadowProjection;
 	uniform vec3 shadowLightPosition;
@@ -60,7 +60,7 @@ uniform vec3 cameraPosition;
 
 #include "/lib/waving.glsl"
 
-#ifdef SHADOW_ENABLED
+#ifdef WORLD_SHADOW_ENABLED
 	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 		#include "/lib/shadows/csm.glsl"
 	#elif SHADOW_TYPE != SHADOW_TYPE_NONE

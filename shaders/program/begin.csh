@@ -9,7 +9,7 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 const ivec3 workGroups = ivec3(4, 1, 1);
 
-#if defined IRIS_FEATURE_SSBO && defined SHADOW_ENABLED && SHADOW_TYPE == SHADOW_TYPE_CASCADED
+#if defined IRIS_FEATURE_SSBO && defined WORLD_SHADOW_ENABLED && SHADOW_TYPE == SHADOW_TYPE_CASCADED
     layout(std430, binding = 0) buffer csmData {
         float cascadeSize[4];           // 16
         vec2 shadowProjectionSize[4];   // 32
@@ -28,7 +28,7 @@ const ivec3 workGroups = ivec3(4, 1, 1);
 
 
 void main() {
-    #if defined IRIS_FEATURE_SSBO && defined SHADOW_ENABLED && SHADOW_TYPE == SHADOW_TYPE_CASCADED
+    #if defined IRIS_FEATURE_SSBO && defined WORLD_SHADOW_ENABLED && SHADOW_TYPE == SHADOW_TYPE_CASCADED
         float cascadeSizes[4];
         cascadeSizes[0] = GetCascadeDistance(0);
         cascadeSizes[1] = GetCascadeDistance(1);
