@@ -52,19 +52,64 @@
 #endif
 
 #ifdef RENDER_FRAG
-    void ApplyFog(inout vec4 color, const in vec3 viewPos) {
-        vec3 fogPos = viewPos;
-        //if (fogShape == 1) fogPos.z = 0.0;
-        float fogF = clamp((length(fogPos) - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
+    #if (defined RENDER_GBUFFER && !defined SHADOW_BLUR) || defined RENDER_COMPOSITE
+        float GetFogFactor(const in float dist, const in float start, const in float end, const in float density) {
+            float distFactor = dist >= end ? 1.0 : smoothstep(start, end, dist);
+            return saturate(pow(distFactor, density));
+        }
 
-        vec3 fogCol = RGBToLinear(fogColor);
-        color.rgb = mix(color.rgb, fogCol, fogF);
+        float GetVanillaFogFactor(const in vec3 localPos) {
+            if (fogStart > far) return 0.0;
 
-        if (color.a > alphaTestRef)
-            color.a = mix(color.a, 1.0, fogF);
-    }
+            vec3 fogPos = localPos;
+            if (fogShape == 1)
+                fogPos.y = 0.0;
 
-    #ifdef RENDER_GBUFFER
+            float viewDist = length(fogPos);
+
+            float fogFactor;
+            if (fogMode == 2)
+                fogFactor = exp(-pow((fogDensity * viewDist), 2.0));
+            else if (fogMode == 1)
+                fogFactor = exp(-fogDensity * viewDist);
+            else
+                fogFactor = (fogEnd - viewDist) * rcp(fogEnd - fogStart);
+
+            return 1.0 - saturate(fogFactor);
+        }
+
+        // float GetVanillaFogFactor2(const in vec3 localPos) {
+        //     if (gl_Fog.scale < EPSILON || gl_Fog.end < EPSILON) return 0.0;
+
+        //     vec3 fogPos = localPos;
+        //     if (fogShape == 1)
+        //         fogPos.y = 0.0;
+
+        //     float viewDist = length(fogPos);
+
+        //     float fogFactor;
+        //     if (fogMode == 2)
+        //         fogFactor = exp(-pow((gl_Fog.density * viewDist), 2.0));
+        //     else if (fogMode == 1)
+        //         fogFactor = exp(-gl_Fog.density * viewDist);
+        //     else
+        //         fogFactor = (gl_Fog.end - viewDist) * gl_Fog.scale;
+
+        //     return 1.0 - saturate(fogFactor);
+        // }
+
+        void ApplyFog(inout vec4 color, const in vec3 localPos) {
+            float fogF = GetVanillaFogFactor(localPos);
+            vec3 fogCol = RGBToLinear(fogColor);
+
+            color.rgb = mix(color.rgb, fogCol, fogF);
+
+            if (color.a > alphaTestRef)
+                color.a = mix(color.a, 1.0, fogF);
+        }
+    #endif
+
+    #if defined RENDER_GBUFFER && !defined RENDER_CLOUDS
         vec4 GetColor() {
             vec4 color = texture(gtexture, texcoord);
 
@@ -121,31 +166,36 @@
         #endif
     #endif
 
-    vec4 GetFinalLighting(const in vec4 color, const in vec3 shadowColor, const in vec3 viewPos, const in vec2 lmcoord, const in float occlusion) {
-        vec3 albedo = RGBToLinear(color.rgb);
+    #if (defined RENDER_GBUFFER && !defined SHADOW_BLUR) || defined RENDER_COMPOSITE
+        vec4 GetFinalLighting(const in vec4 color, const in vec3 shadowColor, const in vec3 localPos, const in vec2 lmcoord, const in float occlusion) {
+            vec3 albedo = RGBToLinear(color.rgb);
 
-        #if SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CASCADE_TINT && defined SHADOW_ENABLED
-            albedo *= 1.0 - LOD_TINT_FACTOR * (1.0 - shadowTileColor);
-        #endif
+            #if SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CASCADE_TINT && defined SHADOW_ENABLED
+                albedo *= 1.0 - LOD_TINT_FACTOR * (1.0 - shadowTileColor);
+            #endif
 
-        #ifdef RENDER_DEFERRED
-            vec3 blockLight = textureLod(colortex3, vec2(lmcoord.x, 1.0/32.0), 0).rgb;
-            vec3 skyLight = textureLod(colortex3, vec2(1.0/32.0, lmcoord.y), 0).rgb;
-        #else
-            vec3 blockLight = textureLod(lightmap, vec2(lmcoord.x, 1.0/32.0), 0).rgb;
-            vec3 skyLight = textureLod(lightmap, vec2(1.0/32.0, lmcoord.y), 0).rgb;
-        #endif
+            #ifdef IS_IRIS
+                vec3 blockLight = textureLod(texLightMap, vec2(lmcoord.x, 1.0/32.0), 0).rgb;
+                vec3 skyLight = textureLod(texLightMap, vec2(1.0/32.0, lmcoord.y), 0).rgb;
+            #elif defined RENDER_COMPOSITE //|| defined RENDER_CLOUDS
+                vec3 blockLight = textureLod(colortex3, vec2(lmcoord.x, 1.0/32.0), 0).rgb;
+                vec3 skyLight = textureLod(colortex3, vec2(1.0/32.0, lmcoord.y), 0).rgb;
+            #else
+                vec3 blockLight = textureLod(lightmap, vec2(lmcoord.x, 1.0/32.0), 0).rgb;
+                vec3 skyLight = textureLod(lightmap, vec2(1.0/32.0, lmcoord.y), 0).rgb;
+            #endif
 
-        blockLight = RGBToLinear(blockLight);
-        skyLight = RGBToLinear(skyLight);
+            blockLight = RGBToLinear(blockLight);
+            skyLight = RGBToLinear(skyLight);
 
-        vec3 ambient = albedo.rgb * skyLight * occlusion * SHADOW_BRIGHTNESS;
-        vec3 diffuse = albedo.rgb * (blockLight + skyLight * shadowColor) * (1.0 - SHADOW_BRIGHTNESS);
-        vec4 final = vec4(ambient + diffuse, color.a);
+            vec3 ambient = albedo.rgb * skyLight * occlusion * SHADOW_BRIGHTNESS;
+            vec3 diffuse = albedo.rgb * (blockLight + skyLight * shadowColor) * (1.0 - SHADOW_BRIGHTNESS);
+            vec4 final = vec4(ambient + diffuse, color.a);
 
-        ApplyFog(final, viewPos);
+            ApplyFog(final, localPos);
 
-        final.rgb = LinearToRGB(final.rgb);
-        return final;
-    }
+            final.rgb = LinearToRGB(final.rgb);
+            return final;
+        }
+    #endif
 #endif

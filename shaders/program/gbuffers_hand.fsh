@@ -29,19 +29,29 @@ in float vLit;
 #endif
 
 uniform sampler2D gtexture;
-uniform sampler2D lightmap;
-
-uniform vec3 upPosition;
-uniform vec3 skyColor;
-uniform int fogMode;
-uniform float fogStart;
-uniform float fogEnd;
-uniform int fogShape;
-uniform vec3 fogColor;
 
 #if MC_VERSION >= 11700
 	uniform float alphaTestRef;
 #endif
+
+#ifndef SHADOW_BLUR
+    #ifdef IS_IRIS
+        uniform sampler2D texLightMap;
+    #else
+        uniform sampler2D lightmap;
+    #endif
+
+	uniform vec3 upPosition;
+	uniform vec3 skyColor;
+	uniform float far;
+	
+	uniform vec3 fogColor;
+	uniform float fogDensity;
+	uniform float fogStart;
+	uniform float fogEnd;
+	uniform int fogShape;
+	uniform int fogMode;
+#endif 
 
 #ifdef SHADOW_ENABLED
 	uniform sampler2D shadowcolor0;

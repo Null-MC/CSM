@@ -1,4 +1,4 @@
-#define RENDER_DEFERRED
+#define RENDER_COMPOSITE
 #define RENDER_VERTEX
 
 #include "/lib/common.glsl"

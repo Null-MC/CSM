@@ -1,4 +1,4 @@
-#define RENDER_DEFERRED
+#define RENDER_COMPOSITE
 #define RENDER_FRAG
 
 #include "/lib/common.glsl"
@@ -10,9 +10,15 @@ uniform sampler2D depthtex0;
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
-uniform sampler2D colortex3;
+
+#ifdef IS_IRIS
+	uniform sampler2D texLightMap;
+#else
+	uniform sampler2D colortex3;
+#endif
 
 uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferModelViewInverse;
 uniform float viewWidth;
 uniform float viewHeight;
 uniform float near;
@@ -20,11 +26,12 @@ uniform float far;
 
 uniform vec3 upPosition;
 uniform vec3 skyColor;
-uniform int fogMode;
+uniform vec3 fogColor;
+uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
 uniform int fogShape;
-uniform vec3 fogColor;
+uniform int fogMode;
 
 #if MC_VERSION >= 11700
 	uniform float alphaTestRef;
@@ -60,7 +67,8 @@ void main() {
 
 		vec3 clipPos = vec3(gl_FragCoord.xy / viewSize, depth) * 2.0 - 1.0;
 		vec3 viewPos = unproject(gbufferProjectionInverse * vec4(clipPos, 1.0));
-		final = GetFinalLighting(color, lightColor, viewPos, lightMap.xy, lightMap.z);
+		vec3 localPos = (gbufferModelViewInverse * vec4(viewPos, 1.0)).xyz;
+		final = GetFinalLighting(color, lightColor, localPos, lightMap.xy, lightMap.z);
 	}
 	else {
 		final = vec4(color.rgb, 1.0);
