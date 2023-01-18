@@ -50,6 +50,8 @@ uniform sampler2D gtexture;
     uniform float fogEnd;
     uniform int fogShape;
     uniform int fogMode;
+
+    uniform float blindness;
 #endif 
 
 #ifdef WORLD_SHADOW_ENABLED

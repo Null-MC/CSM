@@ -57,7 +57,8 @@ void main() {
 		vec2 viewSize = vec2(viewWidth, viewHeight);
 		float linearDepth = linearizeDepthFast(depth, near, far);
 
-		const float sigmaV = 0.2;
+		//const float sigmaV = 3.0;
+		float sigmaV = linearDepth * 0.01;
 
 		#if SHADOW_COLORS == SHADOW_COLOR_ENABLED
 			vec3 lightColor = BilateralGaussianDepthBlurRGB_5x(texcoord, colortex1, viewSize, depthtex0, viewSize, linearDepth, sigmaV);

@@ -35,6 +35,8 @@ uniform sampler2D gtexture;
     uniform float fogEnd;
     uniform int fogShape;
     uniform int fogMode;
+    
+    uniform float blindness;
 
     #include "/lib/lighting.glsl"
 #endif

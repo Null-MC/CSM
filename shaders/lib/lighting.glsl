@@ -69,15 +69,7 @@
 
             float viewDist = length(fogPos);
 
-            float fogFactor;
-            if (fogMode == 2)
-                fogFactor = exp(-pow((fogDensity * viewDist), 2.0));
-            else if (fogMode == 1)
-                fogFactor = exp(-fogDensity * viewDist);
-            else
-                fogFactor = (fogEnd - viewDist) * rcp(fogEnd - fogStart);
-
-            return 1.0 - saturate(fogFactor);
+            return GetFogFactor(viewDist, fogStart, fogEnd, 1.0);
         }
 
         // float GetVanillaFogFactor2(const in vec3 localPos) {
@@ -195,6 +187,8 @@
 
             blockLight = RGBToLinear(blockLight);
             skyLight = RGBToLinear(skyLight);
+
+            skyLight *= 1.0 - blindness;
 
             vec3 ambient = albedo.rgb * skyLight * occlusion * SHADOW_BRIGHTNESS;
             vec3 diffuse = albedo.rgb * (blockLight + skyLight * shadowColor) * (1.0 - SHADOW_BRIGHTNESS);

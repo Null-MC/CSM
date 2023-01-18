@@ -7,12 +7,14 @@
 
 varying vec4 starData; //rgb = star color, a = flag for weather or not this pixel is a star.
 
-uniform float viewHeight;
-uniform float viewWidth;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferProjectionInverse;
+uniform float viewHeight;
+uniform float viewWidth;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
+
+uniform float blindness;
 
 const float sunPathRotation = 30.0;
 
@@ -39,6 +41,8 @@ void main() {
 		pos = gbufferProjectionInverse * pos;
 		color = calcSkyColor(normalize(pos.xyz));
 	}
+
+	color *= 1.0 - blindness;
 
 	outColor0 = vec4(color, 1.0);
 }
