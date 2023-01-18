@@ -2,6 +2,8 @@
 
 A very minimal proof-of-concept demo for using Cascaded Shadow Mapping in Minecraft. This is meant to serve as a learning resource or template for other works, not as a final product itself. 
 
+:zap: For best performance, use Iris 1.6 or later.
+
 
 ## Shadow Types
 - **None**  
@@ -30,8 +32,6 @@ A very minimal proof-of-concept demo for using Cascaded Shadow Mapping in Minecr
 
 # Implementation Details
 Since there is no access to the CPU side for splitting the frustum, culling, and shadow buffers - this technique instead uses a single shadow buffer split into 4 quadrants. Each equally sized quadrant is used as a cascade, meaning this approach uses a fixed count of 4 cascades. Since this is all handled in a single pass, geometry is shifted into each quadrant based on distance. Because there is no overlap between cascades, it is required to sample all cascades to find occlusions.
-
-:information: For best performance, use Iris 1.6 or later.
 
 
 ### Special thanks to:
