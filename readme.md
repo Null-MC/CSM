@@ -1,8 +1,6 @@
-# Minecraft CSM Sample
+# Minecraft single-pass CSM Demo
 
-> ⛔ **This is still an early work-in-progress!** While your encouraged to check it out, please do not try to adopt any of the work here in your own projects until it is ready. Once it is, this message will be replaced and GitHub Releases will be available.
-
-A very minimal proof-of-concept/template for using Cascaded Shadow Mapping in Minecraft. This is meant to serve as a learning resource or template for other works, not as a final product itself. 
+A very minimal proof-of-concept demo for using Cascaded Shadow Mapping in Minecraft. This is meant to serve as a learning resource or template for other works, not as a final product itself. 
 
 
 ## Shadow Types
@@ -33,7 +31,7 @@ A very minimal proof-of-concept/template for using Cascaded Shadow Mapping in Mi
 # Implementation Details
 Since there is no access to the CPU side for splitting the frustum, culling, and shadow buffers - this technique instead uses a single shadow buffer split into 4 quadrants. Each equally sized quadrant is used as a cascade, meaning this approach uses a fixed count of 4 cascades. Since this is all handled in a single pass, geometry is shifted into each quadrant based on distance. Because there is no overlap between cascades, it is required to sample all cascades to find occlusions.
 
-:warning: Currently this requires Optifine since Iris does not yet support the required `at_midBlock` attribute. This notice will be updated as soon as the Iris team finishes adding support.
+:information: For best performance, use Iris 1.6 or later.
 
 
 ### Special thanks to:
