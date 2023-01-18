@@ -40,6 +40,13 @@ void main() {
 	texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 
 	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CSM_FRUSTUM
+		#ifndef IRIS_FEATURE_SSBO
+	        cascadeSize[0] = GetCascadeDistance(0);
+	        cascadeSize[1] = GetCascadeDistance(1);
+	        cascadeSize[2] = GetCascadeDistance(2);
+	        cascadeSize[3] = GetCascadeDistance(3);
+		#endif
+
 		for (int tile = 0; tile < 4; tile++) {
 			//vec2 shadowTilePos = GetShadowTilePos(tile);
 			shadowTileColors[tile] = GetShadowTileColor(tile);
@@ -49,9 +56,9 @@ void main() {
 				float rangeNear = tile > 0 ? cascadeSize[tile - 1] : near;
 				float rangeFar = cascadeSize[tile];
 			#else
-                mat4 _cascadeProjection = GetShadowTileProjectionMatrix(tile);
-				float rangeNear = tile > 0 ? GetCascadeDistance(tile - 1) : near;
-				float rangeFar = GetCascadeDistance(tile);
+                mat4 _cascadeProjection = GetShadowTileProjectionMatrix(cascadeSize, tile);
+				float rangeNear = tile > 0 ? cascadeSize[tile - 1] : near;
+				float rangeFar = cascadeSize[tile];
 			#endif
 
             mat4 matSceneProjectionRanged = gbufferProjection;

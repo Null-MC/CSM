@@ -60,11 +60,17 @@ void main() {
 
     #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
         #ifndef IRIS_FEATURE_SSBO
+            float cascadeSizes[4];
+            cascadeSizes[0] = GetCascadeDistance(0);
+            cascadeSizes[1] = GetCascadeDistance(1);
+            cascadeSizes[2] = GetCascadeDistance(2);
+            cascadeSizes[3] = GetCascadeDistance(3);
+
             mat4 cascadeProjection[4];
-            cascadeProjection[0] = GetShadowTileProjectionMatrix(0);
-            cascadeProjection[1] = GetShadowTileProjectionMatrix(1);
-            cascadeProjection[2] = GetShadowTileProjectionMatrix(2);
-            cascadeProjection[3] = GetShadowTileProjectionMatrix(3);
+            cascadeProjection[0] = GetShadowTileProjectionMatrix(cascadeSizes, 0);
+            cascadeProjection[1] = GetShadowTileProjectionMatrix(cascadeSizes, 1);
+            cascadeProjection[2] = GetShadowTileProjectionMatrix(cascadeSizes, 2);
+            cascadeProjection[3] = GetShadowTileProjectionMatrix(cascadeSizes, 3);
         #endif
 
         int shadowTile = GetShadowTile(cascadeProjection, vOriginPos[0]);

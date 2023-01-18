@@ -131,8 +131,8 @@ vec3 GetShadowTileColor(const in int tile) {
         }
     #endif
 
-    mat4 GetShadowTileProjectionMatrix(const in int tile) {
-        float tileSize = GetCascadeDistance(tile);
+    mat4 GetShadowTileProjectionMatrix(const in float cascadeSizes[4], const in int tile) {
+        float tileSize = cascadeSizes[tile];
         float cascadeSize = tileSize * 2.0 + 3.0;
 
         float zNear = -far;
@@ -223,11 +223,16 @@ vec3 GetShadowTileColor(const in int tile) {
 
         if (geoNoL > 0.0) {
             #ifndef IRIS_FEATURE_SSBO
+                cascadeSize[0] = GetCascadeDistance(0);
+                cascadeSize[1] = GetCascadeDistance(1);
+                cascadeSize[2] = GetCascadeDistance(2);
+                cascadeSize[3] = GetCascadeDistance(3);
+
                 mat4 cascadeProjection[4];
-                cascadeProjection[0] = GetShadowTileProjectionMatrix(0);
-                cascadeProjection[1] = GetShadowTileProjectionMatrix(1);
-                cascadeProjection[2] = GetShadowTileProjectionMatrix(2);
-                cascadeProjection[3] = GetShadowTileProjectionMatrix(3);
+                cascadeProjection[0] = GetShadowTileProjectionMatrix(cascadeSize, 0);
+                cascadeProjection[1] = GetShadowTileProjectionMatrix(cascadeSize, 1);
+                cascadeProjection[2] = GetShadowTileProjectionMatrix(cascadeSize, 2);
+                cascadeProjection[3] = GetShadowTileProjectionMatrix(cascadeSize, 3);
             #endif
 
             vec3 shadowViewPos = (shadowModelView * vec4(localPos, 1.0)).xyz;
@@ -237,8 +242,6 @@ vec3 GetShadowTileColor(const in int tile) {
                     shadowProjectionSize[i] = 2.0 / vec2(
                         cascadeProjection[i][0].x,
                         cascadeProjection[i][1].y);
-
-                    cascadeSize[i] = GetCascadeDistance(i);
                 #endif
                 
                 // convert to shadow screen space

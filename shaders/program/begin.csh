@@ -39,7 +39,7 @@ void main() {
 
         cascadeSize[i] = cascadeSizes[i];
         shadowProjectionPos[i] = GetShadowTilePos(i);
-        cascadeProjection[i] = GetShadowTileProjectionMatrix(i);
+        cascadeProjection[i] = GetShadowTileProjectionMatrix(cascadeSizes, i);
 
         shadowProjectionSize[i] = 2.0 / vec2(
             cascadeProjection[i][0].x,
