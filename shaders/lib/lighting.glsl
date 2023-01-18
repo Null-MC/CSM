@@ -11,14 +11,7 @@
 
         vPos = viewPos.xyz;
 
-        vNormal = gl_Normal;
-
-        #ifdef RENDER_TEXTURED
-            // TODO: extract billboard direction from view matrix?
-            vNormal = normalize(gl_NormalMatrix * vNormal);
-        #else
-            vNormal = normalize(gl_NormalMatrix * vNormal);
-        #endif
+        vNormal = normalize(gl_NormalMatrix * gl_Normal);
 
         vec3 lightDir = normalize(shadowLightPosition);
         geoNoL = dot(lightDir, vNormal);
@@ -36,7 +29,7 @@
 
         #if defined SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
             if (geoNoL > 0.0) {
-                float viewDist = 1.0 + length(viewPos);
+                float viewDist = 1.0 + length(viewPos.xyz);
 
                 vec3 shadowViewPos = viewPos.xyz;
                 shadowViewPos += vNormal * viewDist * SHADOW_NORMAL_BIAS * max(1.0 - geoNoL, 0.0);

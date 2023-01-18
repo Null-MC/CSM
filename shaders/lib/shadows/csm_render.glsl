@@ -34,7 +34,7 @@ int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
         vec2 padding = blockRadius / shadowProjectionSize[i];
 
         // Ignore if outside tile bounds
-        #ifdef IS_IRIS
+        #ifdef IRIS_FEATURE_SSBO
             vec2 clipMin = shadowProjectionPos[i] + padding;
             vec2 clipMax = shadowProjectionPos[i] + 0.5 - padding;
         #else
@@ -52,7 +52,7 @@ int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
 // returns: [0] when depth occluded, [1] otherwise
 float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float bias) {
     #ifdef SHADOW_ENABLE_HWCOMP
-        #ifdef IS_IRIS
+        #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
             return texture(shadowtex0HW, shadowPos + vec3(offset, -bias)).r;
         #else
             return texture(shadow, shadowPos + vec3(offset, -bias)).r;
@@ -101,12 +101,12 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
 
             float shadow = 0.0;
             for (int i = 0; i < sampleCount; i++) {
-                vec2 pixelOffset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
+                vec3 noisePos = vec3(gl_FragCoord.xy, i);
+                vec2 pixelOffset = (hash23(noisePos)*2.0 - 1.0) * pixelRadius;
                 shadow += 1.0 - CompareDepth(shadowPos, pixelOffset, bias);
             }
 
             return shadow / sampleCount;
-            //return smoothstep(0.0, 1.0, shadow / sampleCount);
         }
     #endif
 #endif

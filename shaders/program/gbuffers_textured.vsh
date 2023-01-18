@@ -18,7 +18,7 @@ out float vLit;
 		out vec3 shadowPos[4];
 		flat out int shadowTile;
 
-		#ifndef IS_IRIS
+		#ifndef IRIS_FEATURE_SSBO
 			flat out vec2 shadowProjectionSize[4];
 			flat out float cascadeSize[4];
 		#endif

@@ -50,6 +50,7 @@ const bool colortex2Clear = true;
 
 
 // INTERNAL SETTINGS
+#define IS_IRIS
 #define SHADOW_ENABLED
 #define SHADOW_BASIC_BIAS 0.035
 #define SHADOW_DISTORTED_BIAS 0.03

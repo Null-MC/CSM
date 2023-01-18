@@ -19,7 +19,7 @@ in float vLit;
 		flat in int shadowTile;
 		flat in vec3 shadowTileColor;
 
-		#ifndef IS_IRIS
+		#ifndef IRIS_FEATURE_SSBO
 			flat in vec2 shadowProjectionSize[4];
 			flat in float cascadeSize[4];
 		#endif

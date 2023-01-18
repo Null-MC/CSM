@@ -6,7 +6,7 @@ const vec3 _shadowTileColors[4] = vec3[](
     vec3(0.0, 0.0, 1.0),
     vec3(1.0, 0.0, 1.0));
 
-#if defined IS_IRIS && !defined RENDER_BEGIN
+#if defined IRIS_FEATURE_SSBO && !defined RENDER_BEGIN
     layout(std430, binding = 0) readonly buffer csmData {
         float cascadeSize[4];           // 16
         vec2 shadowProjectionSize[4];   // 32
@@ -222,7 +222,7 @@ vec3 GetShadowTileColor(const in int tile) {
         #endif
 
         if (geoNoL > 0.0) {
-            #ifndef IS_IRIS
+            #ifndef IRIS_FEATURE_SSBO
                 mat4 cascadeProjection[4];
                 cascadeProjection[0] = GetShadowTileProjectionMatrix(0);
                 cascadeProjection[1] = GetShadowTileProjectionMatrix(1);
@@ -233,7 +233,7 @@ vec3 GetShadowTileColor(const in int tile) {
             vec3 shadowViewPos = (shadowModelView * vec4(localPos, 1.0)).xyz;
 
             for (int i = 0; i < 4; i++) {
-                #ifndef IS_IRIS
+                #ifndef IRIS_FEATURE_SSBO
                     shadowProjectionSize[i] = 2.0 / vec2(
                         cascadeProjection[i][0].x,
                         cascadeProjection[i][1].y);
@@ -246,7 +246,7 @@ vec3 GetShadowTileColor(const in int tile) {
 
                 shadowPos[i] = shadowPos[i] * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
 
-                #ifdef IS_IRIS
+                #ifdef IRIS_FEATURE_SSBO
                     shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowProjectionPos[i]; // scale and translate to quadrant
                 #else
                     vec2 shadowProjectionPos = GetShadowTilePos(i);

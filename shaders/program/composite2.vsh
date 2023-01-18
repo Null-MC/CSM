@@ -44,7 +44,7 @@ void main() {
 			//vec2 shadowTilePos = GetShadowTilePos(tile);
 			shadowTileColors[tile] = GetShadowTileColor(tile);
 
-			#ifdef IS_IRIS
+			#ifdef IRIS_FEATURE_SSBO
                 mat4 _cascadeProjection = cascadeProjection[tile];
 				float rangeNear = tile > 0 ? cascadeSize[tile - 1] : near;
 				float rangeFar = cascadeSize[tile];
