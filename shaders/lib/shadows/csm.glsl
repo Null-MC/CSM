@@ -221,76 +221,65 @@ vec3 GetShadowTileColor(const in int tile) {
             shadowTileColor = vec3(1.0);
         #endif
 
-        if (geoNoL > 0.0) {
+        #ifndef IRIS_FEATURE_SSBO
+            cascadeSize[0] = GetCascadeDistance(0);
+            cascadeSize[1] = GetCascadeDistance(1);
+            cascadeSize[2] = GetCascadeDistance(2);
+            cascadeSize[3] = GetCascadeDistance(3);
+
+            mat4 cascadeProjection[4];
+            cascadeProjection[0] = GetShadowTileProjectionMatrix(cascadeSize, 0);
+            cascadeProjection[1] = GetShadowTileProjectionMatrix(cascadeSize, 1);
+            cascadeProjection[2] = GetShadowTileProjectionMatrix(cascadeSize, 2);
+            cascadeProjection[3] = GetShadowTileProjectionMatrix(cascadeSize, 3);
+        #endif
+
+        vec3 shadowViewPos = (shadowModelView * vec4(localPos, 1.0)).xyz;
+
+        for (int i = 0; i < 4; i++) {
             #ifndef IRIS_FEATURE_SSBO
-                cascadeSize[0] = GetCascadeDistance(0);
-                cascadeSize[1] = GetCascadeDistance(1);
-                cascadeSize[2] = GetCascadeDistance(2);
-                cascadeSize[3] = GetCascadeDistance(3);
-
-                mat4 cascadeProjection[4];
-                cascadeProjection[0] = GetShadowTileProjectionMatrix(cascadeSize, 0);
-                cascadeProjection[1] = GetShadowTileProjectionMatrix(cascadeSize, 1);
-                cascadeProjection[2] = GetShadowTileProjectionMatrix(cascadeSize, 2);
-                cascadeProjection[3] = GetShadowTileProjectionMatrix(cascadeSize, 3);
+                shadowProjectionSize[i] = 2.0 / vec2(
+                    cascadeProjection[i][0].x,
+                    cascadeProjection[i][1].y);
             #endif
+            
+            // convert to shadow screen space
+            shadowPos[i] = (cascadeProjection[i] * vec4(shadowViewPos, 1.0)).xyz;
 
-            vec3 shadowViewPos = (shadowModelView * vec4(localPos, 1.0)).xyz;
+            shadowPos[i] = shadowPos[i] * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
 
-            for (int i = 0; i < 4; i++) {
-                #ifndef IRIS_FEATURE_SSBO
-                    shadowProjectionSize[i] = 2.0 / vec2(
-                        cascadeProjection[i][0].x,
-                        cascadeProjection[i][1].y);
-                #endif
-                
-                // convert to shadow screen space
-                shadowPos[i] = (cascadeProjection[i] * vec4(shadowViewPos, 1.0)).xyz;
-
-                shadowPos[i] = shadowPos[i] * 0.5 + 0.5; // convert from -1 ~ +1 to 0 ~ 1
-
-                #ifdef IRIS_FEATURE_SSBO
-                    shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowProjectionPos[i]; // scale and translate to quadrant
-                #else
-                    vec2 shadowProjectionPos = GetShadowTilePos(i);
-                    shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowProjectionPos; // scale and translate to quadrant
-                #endif
-            }
-
-            #if defined RENDER_ENTITIES || defined RENDER_HAND
-                vec3 blockPos = vec3(0.0);
-            #elif defined RENDER_TEXTURED
-                vec3 blockPos = gl_Vertex.xyz;
-                blockPos = floor(blockPos + 0.5);
-                blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
+            #ifdef IRIS_FEATURE_SSBO
+                shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowProjectionPos[i]; // scale and translate to quadrant
             #else
-                #if MC_VERSION >= 11700 && !defined IS_IRIS
-                    vec3 blockPos = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
+                vec2 shadowProjectionPos = GetShadowTilePos(i);
+                shadowPos[i].xy = shadowPos[i].xy * 0.5 + shadowProjectionPos; // scale and translate to quadrant
+            #endif
+        }
 
-                    #if defined RENDER_TERRAIN
-                        blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
-                    #endif
-                #else
-                    vec3 blockPos = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));
-                    blockPos = (gl_ModelViewMatrix * vec4(blockPos, 1.0)).xyz;
-                    blockPos = (shadowModelView * (gbufferModelViewInverse * vec4(blockPos, 1.0))).xyz;
+        #if defined RENDER_ENTITIES || defined RENDER_HAND
+            vec3 blockPos = vec3(0.0);
+        #elif defined RENDER_TEXTURED
+            vec3 blockPos = gl_Vertex.xyz;
+            blockPos = floor(blockPos + 0.5);
+            blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
+        #else
+            #if MC_VERSION >= 11700 && !defined IS_IRIS
+                vec3 blockPos = floor(vaPosition + chunkOffset + at_midBlock / 64.0 + fract(cameraPosition));
+
+                #if defined RENDER_TERRAIN
+                    blockPos = (shadowModelView * vec4(blockPos, 1.0)).xyz;
                 #endif
+            #else
+                vec3 blockPos = floor(gl_Vertex.xyz + at_midBlock / 64.0 + fract(cameraPosition));
+                blockPos = (gl_ModelViewMatrix * vec4(blockPos, 1.0)).xyz;
+                blockPos = (shadowModelView * (gbufferModelViewInverse * vec4(blockPos, 1.0))).xyz;
             #endif
+        #endif
 
-            shadowTile = GetShadowTile(cascadeProjection, blockPos);
+        shadowTile = GetShadowTile(cascadeProjection, blockPos);
 
-            #if defined DEBUG_CASCADE_TINT && !defined RENDER_TEXTURED
-                shadowTileColor = GetShadowTileColor(shadowTile);
-            #endif
-        }
-        else {
-            // vertex is facing away from the sun
-            // mark that this vertex does not need to check the shadow map.
-            shadowTile = -1;
-            shadowPos[0] = vec3(0.0);
-            shadowPos[1] = vec3(0.0);
-            shadowPos[2] = vec3(0.0);
-            shadowPos[3] = vec3(0.0);
-        }
+        #if defined DEBUG_CASCADE_TINT && !defined RENDER_TEXTURED
+            shadowTileColor = GetShadowTileColor(shadowTile);
+        #endif
     }
 #endif

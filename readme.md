@@ -35,7 +35,7 @@ Since there is no access to the CPU side for splitting the frustum, culling, and
 
 
 ### Special thanks to:
-- Balint: Providing a correct projection matrix function, waving leaves
-- BuilderBoy: Providing player detection
-- Lith: Providing entity detection
-- Zombye: Providing a correct block-snapping function
+- Balint: Providing a correct projection matrix function, waving leaves, and soft-shadow disk sampling.
+- Zombye: Providing a correct block-snapping function.
+- BuilderBoy: Providing player detection.
+- Lith: Providing entity detection.

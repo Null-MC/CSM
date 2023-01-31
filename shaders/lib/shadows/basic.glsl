@@ -1,6 +1,7 @@
-//euclidian distance is defined as sqrt(a^2 + b^2 + ...)
-//this length function instead does cbrt(a^3 + b^3 + ...)
-//this results in smaller distances along the diagonal axes.
+// euclidian distance is defined as sqrt(a^2 + b^2 + ...)
+// this length function instead does cbrt(a^3 + b^3 + ...)
+// this results in smaller distances along the diagonal axes.
+
 float cubeLength(const in vec2 v) {
 	return pow(abs(v.x * v.x * v.x) + abs(v.y * v.y * v.y), 1.0 / 3.0);
 }
@@ -19,26 +20,13 @@ vec3 distort(const in vec3 v) {
 
 #if defined RENDER_VERTEX && !defined RENDER_SHADOW
 	void ApplyShadows(const in vec3 localPos) {
-		// #if defined RENDER_TERRAIN && defined SHADOW_EXCLUDE_FOLIAGE
-		// 	//when SHADOW_EXCLUDE_FOLIAGE is enabled, act as if foliage is always facing towards the sun.
-		// 	//in other words, don't darken the back side of it unless something else is casting a shadow on it.
-		// 	if (mc_Entity.x >= 10000.0 && mc_Entity.x <= 10004.0) geoNoL = 1.0;
-		// #endif
+		vec3 shadowViewPos = (shadowModelView * vec4(localPos, 1.0)).xyz;
+		shadowPos = (shadowProjection * vec4(shadowViewPos, 1.0)).xyz;
 
-		if (geoNoL > 0.0) { //vertex is facing towards the sun
-			vec3 shadowViewPos = (shadowModelView * vec4(localPos, 1.0)).xyz;
+		#if SHADOW_TYPE == SHADOW_TYPE_DISTORTED
+			shadowPos = distort(shadowPos);
+		#endif
 
-			shadowPos = (shadowProjection * vec4(shadowViewPos, 1.0)).xyz; //convert to shadow screen space
-
-			#if SHADOW_TYPE == SHADOW_TYPE_DISTORTED
-				shadowPos = distort(shadowPos);
-			#endif
-
-			shadowPos = shadowPos * 0.5 + 0.5; //convert from -1 ~ +1 to 0 ~ 1
-		}
-		else { //vertex is facing away from the sun
-			// mark that this vertex does not need to check the shadow map.
-			shadowPos = vec3(0.0);
-		}
+		shadowPos = shadowPos * 0.5 + 0.5;
 	}
 #endif

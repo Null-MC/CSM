@@ -41,6 +41,7 @@ void main() {
 
 	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED && defined DEBUG_CSM_FRUSTUM
 		#ifndef IRIS_FEATURE_SSBO
+			float cascadeSize[4];
 	        cascadeSize[0] = GetCascadeDistance(0);
 	        cascadeSize[1] = GetCascadeDistance(1);
 	        cascadeSize[2] = GetCascadeDistance(2);

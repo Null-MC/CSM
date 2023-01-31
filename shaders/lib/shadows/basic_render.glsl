@@ -1,19 +1,3 @@
-// #if SHADOW_COLORS == 1
-//  vec3 GetShadowColor(const in vec3 shadowPos) {
-//      //when colored shadows are enabled and there's nothing OPAQUE between us and the sun,
-//      //perform a 2nd check to see if there's anything translucent between us and the sun.
-//      if (texture(shadowtex0, shadowPos.xy).r >= shadowPos.z) return vec3(1.0);
-
-//      //surface has translucent object between it and the sun. modify its color.
-//      //if the block light is high, modify the color less.
-//      vec4 shadowLightColor = texture(shadowcolor0, shadowPos.xy);
-//      vec3 color = RGBToLinear(shadowLightColor.rgb);
-
-//      //make colors more intense when the shadow light color is more opaque.
-//      return mix(vec3(1.0), color, shadowLightColor.a);
-//  }
-// #endif
-
 float GetShadowBias(const in float geoNoL) {
     return 0.000004;
 }
@@ -55,10 +39,19 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
         vec3 GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
             float bias = GetShadowBias(geoNoL);
             vec3 shadowColor = vec3(0.0);
+
+            float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
+            vec2 rotation = vec2(cos(startAngle), sin(startAngle));
+
+            float angleDiff = PI * -2.0 / sampleCount;
+            vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
+            mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
             
             for (int i = 0; i < sampleCount; i++) {
-                vec3 noisePos = vec3(gl_FragCoord.xy, i);
-                vec2 pixelOffset = (hash23(noisePos)*2.0 - 1.0) * pixelRadius;
+                rotation *= rotationStep;
+                float noiseDist = hash13(vec3(gl_FragCoord.xy, i));
+                vec2 pixelOffset = rotation * noiseDist * pixelRadius;
+
                 vec4 sampleColor = vec4(1.0);
 
                 float depthOpaque = textureLod(shadowtex1, shadowPos.xy + pixelOffset, 0).r;
@@ -84,10 +77,19 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
         float GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
             float bias = GetShadowBias(geoNoL);
 
+            float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
+            vec2 rotation = vec2(cos(startAngle), sin(startAngle));
+
+            float angleDiff = PI * -2.0 / sampleCount;
+            vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
+            mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
+
             float shadow = 0.0;
             for (int i = 0; i < sampleCount; i++) {
-                vec3 noisePos = vec3(gl_FragCoord.xy, i);
-                vec2 pixelOffset = (hash23(noisePos)*2.0 - 1.0) * pixelRadius;
+                rotation *= rotationStep;
+                float noiseDist = hash13(vec3(gl_FragCoord.xy, i));
+                vec2 pixelOffset = rotation * noiseDist * pixelRadius;
+
                 shadow += 1.0 - CompareDepth(shadowPos, pixelOffset, bias);
             }
 
@@ -101,7 +103,6 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
         #if SHADOW_TYPE == SHADOW_TYPE_DISTORTED
             float distortFactor = getDistortFactor(shadowPos.xy * 2.0 - 1.0);
             float maxRes = shadowMapSize / SHADOW_DISTORT_FACTOR;
-            //float maxResPixel = 1.0 / maxRes;
 
             vec2 pixelPerBlockScale = maxRes / shadowProjectionSize;
             return blockRadius * pixelPerBlockScale * shadowPixelSize * (1.0 - distortFactor);
@@ -115,21 +116,27 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
 #if SHADOW_FILTER == 2
     // PCF + PCSS
     float FindBlockerDistance(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
-        //float radius = SearchWidth(uvLightSize, shadowPos.z);
-        //float radius = 6.0; //SHADOW_LIGHT_SIZE * (shadowPos.z - PCSS_NEAR) / shadowPos.z;
-        float avgBlockerDistance = 0;
-        int blockers = 0;
+        float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
+        vec2 rotation = vec2(cos(startAngle), sin(startAngle));
 
+        float angleDiff = PI * -2.0 / sampleCount;
+        vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
+        mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
+        
+        int blockers = 0;
+        float avgBlockerDistance = 0;
         for (int i = 0; i < sampleCount; i++) {
-            vec2 offset = (hash23(vec3(gl_FragCoord.xy, i))*2.0 - 1.0) * pixelRadius;
+            rotation *= rotationStep;
+            float noiseDist = hash13(vec3(gl_FragCoord.xy, i + 100.0));
+            vec2 pixelOffset = rotation * noiseDist * pixelRadius;
 
             #if SHADOW_COLORS == SHADOW_COLOR_IGNORED
-                float texDepth = texture(shadowtex1, shadowPos.xy + offset).r;
+                float texDepth = texture(shadowtex1, shadowPos.xy + pixelOffset).r;
             #else
-                float texDepth = texture(shadowtex0, shadowPos.xy + offset).r;
+                float texDepth = texture(shadowtex0, shadowPos.xy + pixelOffset).r;
             #endif
 
-            if (texDepth < shadowPos.z) { // - directionalLightShadowMapBias
+            if (texDepth < shadowPos.z) {
                 avgBlockerDistance += texDepth;
                 blockers++;
             }
@@ -149,9 +156,6 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
 
             if (blockerDistance <= 0.0) {
                 float bias = GetShadowBias(geoNoL);
-
-                //float depthOpaque = textureLod(shadowtex1, shadowPos.xy, 0).r;
-                //if (shadowPos.z - bias > depthOpaque) return vec3(0.0);
 
                 float depthTrans = textureLod(shadowtex0, shadowPos.xy, 0).r;
                 if (shadowPos.z - bias < depthTrans) return vec3(1.0);
@@ -188,7 +192,7 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
             float penumbraWidth = (shadowPos.z - blockerDistance) / blockerDistance;
 
             // percentage-close filtering
-            pixelRadius *= min(penumbraWidth * 20.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
+            pixelRadius *= min(penumbraWidth * SHADOW_PENUMBRA_SCALE, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
 
             int pcfSampleCount = SHADOW_PCF_SAMPLES;
             if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;

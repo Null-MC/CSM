@@ -26,7 +26,6 @@ layout(location = 0) out vec4 outColor0;
 void main() {
 	#if SHADOW_TYPE == 3
 		vec2 p = gl_FragCoord.xy / shadowMapSize - gShadowTilePos;
-		//if (p.x < 0 || p.x >= 0.5 || p.y < 0 || p.y >= 0.5) discard;
 		if (clamp(p, vec2(0.0), vec2(0.5)) != p) discard;
 	#endif
 

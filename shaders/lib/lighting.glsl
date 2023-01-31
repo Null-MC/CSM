@@ -37,16 +37,14 @@
                 shadowTile = -1;
             #endif
 
-            if (geoNoL > 0.0) {
-                float viewDist = 1.0 + length(viewPos.xyz);
+            float viewDist = 1.0 + length(viewPos.xyz);
 
-                vec3 shadowViewPos = viewPos.xyz;
-                shadowViewPos += vNormal * viewDist * SHADOW_NORMAL_BIAS * max(1.0 - geoNoL, 0.0);
+            vec3 shadowViewPos = viewPos.xyz;
+            shadowViewPos += vNormal * viewDist * SHADOW_NORMAL_BIAS * max(1.0 - geoNoL, 0.0);
 
-                vec3 shadowLocalPos = (gbufferModelViewInverse * vec4(shadowViewPos, 1.0)).xyz;
+            vec3 shadowLocalPos = (gbufferModelViewInverse * vec4(shadowViewPos, 1.0)).xyz;
 
-                ApplyShadows(shadowLocalPos);
-            }
+            ApplyShadows(shadowLocalPos);
         #endif
 
         gl_Position = gl_ProjectionMatrix * viewPos;
@@ -71,26 +69,6 @@
 
             return GetFogFactor(viewDist, fogStart, fogEnd, 1.0);
         }
-
-        // float GetVanillaFogFactor2(const in vec3 localPos) {
-        //     if (gl_Fog.scale < EPSILON || gl_Fog.end < EPSILON) return 0.0;
-
-        //     vec3 fogPos = localPos;
-        //     if (fogShape == 1)
-        //         fogPos.y = 0.0;
-
-        //     float viewDist = length(fogPos);
-
-        //     float fogFactor;
-        //     if (fogMode == 2)
-        //         fogFactor = exp(-pow((gl_Fog.density * viewDist), 2.0));
-        //     else if (fogMode == 1)
-        //         fogFactor = exp(-gl_Fog.density * viewDist);
-        //     else
-        //         fogFactor = (gl_Fog.end - viewDist) * gl_Fog.scale;
-
-        //     return 1.0 - saturate(fogFactor);
-        // }
 
         void ApplyFog(inout vec4 color, const in vec3 localPos) {
             float fogF = GetVanillaFogFactor(localPos);
@@ -130,16 +108,14 @@
                 vec3 shadowColor = vec3(1.0);
 
                 #if defined WORLD_SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
-                    if (geoNoL > 0.0) {
-                        #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
-                            int tile = GetShadowCascade(shadowPos, ShadowPCFSize);
+                    #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
+                        int tile = GetShadowCascade(shadowPos, ShadowPCFSize);
 
-                            if (tile >= 0)
-                                shadowColor = GetShadowColor(shadowPos, tile);
-                        #else
-                            shadowColor = GetShadowColor(shadowPos);
-                        #endif
-                    }
+                        if (tile >= 0)
+                            shadowColor = GetShadowColor(shadowPos[tile], tile);
+                    #else
+                        shadowColor = GetShadowColor(shadowPos);
+                    #endif
                 #endif
 
                 return mix(shadowColor * max(vLit, 0.0), vec3(1.0), SHADOW_BRIGHTNESS);
@@ -149,16 +125,14 @@
                 float shadow = 1.0;
 
                 #if defined WORLD_SHADOW_ENABLED && SHADOW_TYPE != SHADOW_TYPE_NONE
-                    if (geoNoL > 0.0) {
-                        #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
-                            int tile = GetShadowCascade(shadowPos, ShadowPCFSize);
+                    #if SHADOW_TYPE == SHADOW_TYPE_CASCADED
+                        int tile = GetShadowCascade(shadowPos, ShadowPCFSize);
 
-                            if (tile >= 0)
-                                shadow = GetShadowFactor(shadowPos, tile);
-                        #else
-                            shadow = GetShadowFactor(shadowPos);
-                        #endif
-                    }
+                        if (tile >= 0)
+                            shadow = GetShadowFactor(shadowPos[tile], tile);
+                    #else
+                        shadow = GetShadowFactor(shadowPos);
+                    #endif
                 #endif
 
                 return shadow * max(vLit, 0.0);

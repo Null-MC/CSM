@@ -4,18 +4,18 @@
 #include "/lib/common.glsl"
 #include "/lib/constants.glsl"
 
-varying vec2 vTexcoord;
-varying vec4 vColor;
-
-#if SHADOW_TYPE == 3
-	flat varying vec3 vOriginPos;
-	flat varying int vBlockId;
-	flat varying int vEntityId;
-#endif
-
 in vec4 mc_Entity;
 in vec3 vaPosition;
 in vec3 at_midBlock;
+
+out vec2 vTexcoord;
+out vec4 vColor;
+
+#if SHADOW_TYPE == 3
+	flat out vec3 vOriginPos;
+	flat out int vBlockId;
+	flat out int vEntityId;
+#endif
 
 uniform mat4 shadowModelView;
 uniform mat4 shadowModelViewInverse;
