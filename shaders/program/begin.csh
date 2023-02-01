@@ -15,6 +15,9 @@ const ivec3 workGroups = ivec3(4, 1, 1);
         vec2 shadowProjectionSize[4];   // 32
         vec2 shadowProjectionPos[4];    // 32
         mat4 cascadeProjection[4];      // 256
+
+        vec3 cascadeViewMin[4];         // 48
+        vec3 cascadeViewMax[4];         // 48
     };
 
     uniform mat4 gbufferModelView;
@@ -44,6 +47,24 @@ void main() {
         shadowProjectionSize[i] = 2.0 / vec2(
             cascadeProjection[i][0].x,
             cascadeProjection[i][1].y);
+
+        mat4 cascadeProjectionInv[4];
+        cascadeProjectionInv[0] = inverse(cascadeProjection[0]);
+        cascadeProjectionInv[1] = inverse(cascadeProjection[1]);
+        cascadeProjectionInv[2] = inverse(cascadeProjection[2]);
+        cascadeProjectionInv[3] = inverse(cascadeProjection[3]);
+
+        cascadeViewMin[0] = (cascadeProjectionInv[0] * vec4(vec3(-1.0), 1.0)).xyz;
+        cascadeViewMax[0] = (cascadeProjectionInv[0] * vec4(vec3( 1.0), 1.0)).xyz;
+
+        cascadeViewMin[1] = (cascadeProjectionInv[1] * vec4(vec3(-1.0), 1.0)).xyz;
+        cascadeViewMax[1] = (cascadeProjectionInv[1] * vec4(vec3( 1.0), 1.0)).xyz;
+
+        cascadeViewMin[2] = (cascadeProjectionInv[2] * vec4(vec3(-1.0), 1.0)).xyz;
+        cascadeViewMax[2] = (cascadeProjectionInv[2] * vec4(vec3( 1.0), 1.0)).xyz;
+
+        cascadeViewMin[3] = (cascadeProjectionInv[3] * vec4(vec3(-1.0), 1.0)).xyz;
+        cascadeViewMax[3] = (cascadeProjectionInv[3] * vec4(vec3( 1.0), 1.0)).xyz;
     #endif
 
     barrier();
