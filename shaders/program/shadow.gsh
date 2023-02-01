@@ -92,7 +92,11 @@ void main() {
             if (c != shadowTile) {
                 #ifdef SHADOW_CSM_OVERLAP
                     // duplicate geometry if intersecting overlapping cascades
-                    if (!CascadeIntersectsProjection(vOriginPos[0], cascadeProjection[c])) continue;
+                    #ifdef IRIS_FEATURE_SSBO
+                        if (!CascadeIntersectsProjection(vOriginPos[0], c)) continue;
+                    #else
+                        if (!CascadeIntersectsProjection(vOriginPos[0], cascadeProjection[c])) continue;
+                    #endif
                 #else
                     continue;
                 #endif

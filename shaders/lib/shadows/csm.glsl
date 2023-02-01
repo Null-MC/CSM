@@ -13,8 +13,8 @@ const vec3 _shadowTileColors[4] = vec3[](
         vec2 shadowProjectionPos[4];    // 32
         mat4 cascadeProjection[4];      // 256
 
-        vec3 cascadeViewMin[4];         // 48
-        vec3 cascadeViewMax[4];         // 48
+        vec2 cascadeViewMin[4];         // 32
+        vec2 cascadeViewMax[4];         // 32
     };
 #endif
 
@@ -115,17 +115,21 @@ vec3 GetShadowTileColor(const in int tile) {
                -matShadowProjection[2].z);
         }
 
-        #ifdef IRIS_FEATURE_SSBO
-            bool CascadeContainsProjection(const in vec3 shadowViewPos, const in int cascade) {
-                return all(greaterThan(shadowViewPos, cascadeViewMin[cascade] + 1.5)) && all(lessThan(shadowViewPos, cascadeViewMax[cascade] - 1.5));
-            }
-        #else
-            bool CascadeContainsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
-                vec3 clipPos = mat3(matShadowProjection) * shadowViewPos + matShadowProjection[3].xyz;
-                vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection, -1.5);
-                return all(greaterThan(clipPos, -paddedSize)) && all(lessThan(clipPos, paddedSize));
-            }
-        #endif
+        bool CascadeContainsProjection(const in vec3 shadowViewPos, const in int cascade) {
+            return all(greaterThan(shadowViewPos.xy, cascadeViewMin[cascade]))
+                && all(lessThan(shadowViewPos.xy, cascadeViewMax[cascade]));
+        }
+
+        bool CascadeContainsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
+            vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
+            vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection, -1.5);
+            return all(greaterThan(clipPos, -paddedSize)) && all(lessThan(clipPos, paddedSize));
+        }
+
+        bool CascadeIntersectsProjection(const in vec3 shadowViewPos, const in int cascade) {
+            return all(greaterThan(shadowViewPos.xy + 1.5, cascadeViewMin[cascade]))
+                && all(lessThan(shadowViewPos.xy - 1.5, cascadeViewMax[cascade]));
+        }
 
         bool CascadeIntersectsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
             //vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
@@ -135,7 +139,7 @@ vec3 GetShadowTileColor(const in int tile) {
         }
     #endif
 
-    mat4 GetShadowTileProjectionMatrix(const in float cascadeSizes[4], const in int tile) {
+    mat4 GetShadowTileProjectionMatrix(const in float cascadeSizes[4], const in int tile, out vec2 shadowViewMin, out vec2 shadowViewMax) {
         float tileSize = cascadeSizes[tile];
         float cascadeSize = tileSize * 2.0 + 3.0;
 
@@ -170,6 +174,13 @@ vec3 GetShadowTileColor(const in int tile) {
             vec3 clipMin, clipMax;
             GetFrustumMinMax(matSceneToShadow, clipMin, clipMax);
 
+            clipMin = max(clipMin, vec3(-1.0));
+            clipMax = min(clipMax, vec3( 1.0));
+
+            float viewScale = 2.0 / cascadeSize;
+            shadowViewMin = clipMin.xy / viewScale;
+            shadowViewMax = clipMax.xy / viewScale;
+
             // add block padding to clip min/max
             vec2 blockPadding = 3.0 * vec2(
                 matShadowProjection[0][0],
@@ -191,16 +202,21 @@ vec3 GetShadowTileColor(const in int tile) {
 
         return matShadowProjection;
     }
+
+    mat4 GetShadowTileProjectionMatrix(const in float cascadeSizes[4], const in int tile) {
+        vec2 shadowViewMin, shadowViewMax;
+        return GetShadowTileProjectionMatrix(cascadeSizes, tile, shadowViewMin, shadowViewMax);
+    }
 #endif
 
 #if (defined RENDER_VERTEX || defined RENDER_GEOMETRY) && !defined RENDER_COMPOSITE
     // returns: tile [0-3] or -1 if excluded
     int GetShadowTile(const in mat4 matShadowProjections[4], const in vec3 blockPos) {
-        #ifdef SHADOW_CSM_FITRANGE
-            const int max = 3;
-        #else
+        //#ifdef SHADOW_CSM_FITRANGE
+        //    const int max = 3;
+        //#else
             const int max = 4;
-        #endif
+        //#endif
 
         for (int i = 0; i < max; i++) {
             #ifdef SHADOW_CSM_TIGHTEN
@@ -219,11 +235,11 @@ vec3 GetShadowTileColor(const in int tile) {
             #endif
         }
 
-        #ifdef SHADOW_CSM_FITRANGE
-            return 3;
-        #else
+        //#ifdef SHADOW_CSM_FITRANGE
+        //    return 3;
+        //#else
             return -1;
-        #endif
+        //#endif
     }
 #endif
 

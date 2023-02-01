@@ -40,24 +40,23 @@ bool IsSampleWithinCascade(const in vec2 shadowPos, const in int cascade, const 
         vec2 clipMax = shadowTilePos + 0.5 - padding;
     #endif
 
-    //return clamp(shadowPos, clipMin, clipMax) == shadowPos;
     return all(greaterThan(shadowPos, clipMin)) && all(lessThan(shadowPos, clipMax));
 }
 
-int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
-    //return 0;
+// int GetShadowCascade(const in vec3 shadowViewPos, const in float blockRadius) {
+//     if (CascadeContainsProjection(shadowViewPos, 0, blockRadius)) return 0;
+//     if (CascadeContainsProjection(shadowViewPos, 1, blockRadius)) return 1;
+//     if (CascadeContainsProjection(shadowViewPos, 2, blockRadius)) return 2;
+//     if (CascadeContainsProjection(shadowViewPos, 3, blockRadius)) return 3;
+//     return -1;
+// }
 
+int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
     if (IsSampleWithinCascade(shadowPos[0].xy, 0, blockRadius)) return 0;
     if (IsSampleWithinCascade(shadowPos[1].xy, 1, blockRadius)) return 1;
     if (IsSampleWithinCascade(shadowPos[2].xy, 2, blockRadius)) return 2;
     if (IsSampleWithinCascade(shadowPos[3].xy, 3, blockRadius)) return 3;
     return -1;
-
-    // if (!IsSampleWithinCascade(shadowPos[3].xy, 3, blockRadius)) return -1;
-    // else if (!IsSampleWithinCascade(shadowPos[2].xy, 2, blockRadius)) return 3;
-    // else if (!IsSampleWithinCascade(shadowPos[1].xy, 1, blockRadius)) return 2;
-    // else if (!IsSampleWithinCascade(shadowPos[0].xy, 0, blockRadius)) return 1;
-    // else return 0;
 }
 
 // returns: [0] when depth occluded, [1] otherwise
