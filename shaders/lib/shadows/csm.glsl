@@ -115,33 +115,34 @@ vec3 GetShadowTileColor(const in int tile) {
                -matShadowProjection[2].z);
         }
 
-        bool CascadeContainsProjection(const in vec3 shadowViewPos, const in int cascade) {
-            return all(greaterThan(shadowViewPos.xy, cascadeViewMin[cascade]))
-                && all(lessThan(shadowViewPos.xy, cascadeViewMax[cascade]));
-        }
+        #ifdef IRIS_FEATURE_SSBO
+            bool CascadeContainsProjection(const in vec3 shadowViewPos, const in int cascade) {
+                return all(greaterThan(shadowViewPos.xy, cascadeViewMin[cascade]))
+                    && all(lessThan(shadowViewPos.xy, cascadeViewMax[cascade]));
+            }
 
-        bool CascadeContainsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
-            vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
-            vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection, -1.5);
-            return all(greaterThan(clipPos, -paddedSize)) && all(lessThan(clipPos, paddedSize));
-        }
+            bool CascadeIntersectsProjection(const in vec3 shadowViewPos, const in int cascade) {
+                return all(greaterThan(shadowViewPos.xy + 1.5, cascadeViewMin[cascade]))
+                    && all(lessThan(shadowViewPos.xy - 1.5, cascadeViewMax[cascade]));
+            }
+        #else
+            bool CascadeContainsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
+                vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
+                vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection, -1.5);
+                return all(greaterThan(clipPos, -paddedSize)) && all(lessThan(clipPos, paddedSize));
+            }
 
-        bool CascadeIntersectsProjection(const in vec3 shadowViewPos, const in int cascade) {
-            return all(greaterThan(shadowViewPos.xy + 1.5, cascadeViewMin[cascade]))
-                && all(lessThan(shadowViewPos.xy - 1.5, cascadeViewMax[cascade]));
-        }
-
-        bool CascadeIntersectsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
-            //vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
-            vec3 clipPos = mat3(matShadowProjection) * shadowViewPos + matShadowProjection[3].xyz;
-            vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection, 1.5);
-            return all(greaterThan(clipPos, -paddedSize)) && all(lessThan(clipPos, paddedSize));
-        }
+            bool CascadeIntersectsProjection(const in vec3 shadowViewPos, const in mat4 matShadowProjection) {
+                vec3 clipPos = (matShadowProjection * vec4(shadowViewPos, 1.0)).xyz;
+                vec3 paddedSize = GetCascadePaddedFrustumClipBounds(matShadowProjection, 1.5);
+                return all(greaterThan(clipPos, -paddedSize)) && all(lessThan(clipPos, paddedSize));
+            }
+        #endif
     #endif
 
     mat4 GetShadowTileProjectionMatrix(const in float cascadeSizes[4], const in int tile, out vec2 shadowViewMin, out vec2 shadowViewMax) {
         float tileSize = cascadeSizes[tile];
-        float cascadeSize = tileSize * 2.0 + 3.0;
+        float projectionSize = tileSize * 2.0 + 3.0;
 
         float zNear = -far;
         float zFar = far * 2.0;
@@ -149,7 +150,7 @@ vec3 GetShadowTileColor(const in int tile) {
         // TESTING: reduce the depth-range for the nearest cascade only
         //if (tile == 0) zNear = 0.0;
 
-        mat4 matShadowProjection = BuildOrthoProjectionMatrix(cascadeSize, cascadeSize, zNear, zFar);
+        mat4 matShadowProjection = BuildOrthoProjectionMatrix(projectionSize, projectionSize, zNear, zFar);
 
         #ifdef SHADOW_CSM_TIGHTEN
             #ifdef IS_IRIS
@@ -177,7 +178,7 @@ vec3 GetShadowTileColor(const in int tile) {
             clipMin = max(clipMin, vec3(-1.0));
             clipMax = min(clipMax, vec3( 1.0));
 
-            float viewScale = 2.0 / cascadeSize;
+            float viewScale = 2.0 / projectionSize;
             shadowViewMin = clipMin.xy / viewScale;
             shadowViewMax = clipMax.xy / viewScale;
 
@@ -226,12 +227,8 @@ vec3 GetShadowTileColor(const in int tile) {
                     if (CascadeContainsProjection(blockPos, matShadowProjections[i])) return i;
                 #endif
             #else
-                #if IS_IRIS
-                    if (all(greaterThan(blockPos.xy, -size)) && all(lessThan(blockPos.xy, size))) return i;
-                #else
-                    float size = GetCascadeDistance(i);
-                    if (blockPos.xy == clamp(blockPos.xy, -size, size)) return i;
-                #endif
+                float size = GetCascadeDistance(i);
+                if (all(greaterThan(blockPos.xy, -size)) && all(lessThan(blockPos.xy, size))) return i;
             #endif
         }
 

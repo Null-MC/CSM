@@ -30,6 +30,8 @@ in float vLit;
 
 uniform sampler2D gtexture;
 
+uniform float far;
+
 #if MC_VERSION >= 11700
 	uniform float alphaTestRef;
 #endif
@@ -43,7 +45,7 @@ uniform sampler2D gtexture;
 
 	uniform vec3 upPosition;
 	uniform vec3 skyColor;
-	uniform float far;
+	//uniform float far;
 	
 	uniform vec3 fogColor;
 	uniform float fogDensity;
@@ -68,6 +70,7 @@ uniform sampler2D gtexture;
         #endif
     #endif
 	
+
 	uniform vec3 shadowLightPosition;
 
 	#if SHADOW_TYPE != SHADOW_TYPE_NONE
@@ -78,6 +81,9 @@ uniform sampler2D gtexture;
 #include "/lib/noise.glsl"
 
 #ifdef WORLD_SHADOW_ENABLED
+    #include "/lib/ign.glsl"
+    #include "/lib/shadows/common.glsl"
+
 	#if SHADOW_TYPE == SHADOW_TYPE_CASCADED
 		#include "/lib/shadows/csm.glsl"
 		#include "/lib/shadows/csm_render.glsl"

@@ -37,9 +37,9 @@ const bool colortex2Clear = true;
 #define SHADOW_CSM_OVERLAP
 #define SHADOW_FILTER 2 // [0 1 2]
 #define SHADOW_PCF_SIZE 60 // [5 10 15 20 25 30 35 40 45 50 60 70 80 90 100 120 140 160 180 200 250 300 350 400 450 500 600 700 800]
-#define SHADOW_PCF_SAMPLES 4 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
-#define SHADOW_PCSS_SAMPLES 6 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36]
-#define SHADOW_PENUMBRA_SCALE 10.0
+#define SHADOW_PCF_SAMPLES 4 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32]
+#define SHADOW_PCSS_SAMPLES 6 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32]
+#define SHADOW_PENUMBRA_SCALE 0.06
 //#define SHADOW_ENABLE_HWCOMP
 #define SHADOW_BLUR
 
@@ -61,17 +61,18 @@ const float ShadowPCFSize = SHADOW_PCF_SIZE * 0.001;
 #define CSM_PLAYER_ID 0
 
 #define PI 3.1415926538
+#define TAU 6.2831853076
 #define EPSILON 1e-6
 #define GAMMA 2.2
 
 
-#if SHADOW_TYPE != 1 && SHADOW_TYPE != 2
-	#undef SHADOW_DISTORT_FACTOR
-#endif
+// #if SHADOW_TYPE != 1 && SHADOW_TYPE != 2
+// 	#undef SHADOW_DISTORT_FACTOR
+// #endif
 
-#if SHADOW_FILTER != 2
-    #undef SHADOW_PCSS_SAMPLES
-#endif
+// #if SHADOW_FILTER != 2
+//     #undef SHADOW_PCSS_SAMPLES
+// #endif
 
 #if MC_VERSION < 11700
     const float alphaTestRef = 0.1;

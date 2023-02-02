@@ -36,21 +36,30 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
 #if SHADOW_FILTER != 0
     // PCF
     #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
-        vec3 GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
-            float bias = GetShadowBias(geoNoL);
-            vec3 shadowColor = vec3(0.0);
+        vec3 GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in float bias) {
+            #ifdef IRIS_FEATURE_SSBO
+                float dither = InterleavedGradientNoise(gl_FragCoord.xy);
+                float angle = fract(dither) * TAU;
+                float s = sin(angle), c = cos(angle);
+                mat2 rotation = mat2(c, -s, s, c);
+            #else
+                float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
+                vec2 rotation = vec2(cos(startAngle), sin(startAngle));
 
-            float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
-            vec2 rotation = vec2(cos(startAngle), sin(startAngle));
-
-            float angleDiff = PI * -2.0 / sampleCount;
-            vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
-            mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
+                const float angleDiff = -(PI * 2.0) / SHADOW_PCF_SAMPLES;
+                const vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
+                const mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
+            #endif
             
-            for (int i = 0; i < sampleCount; i++) {
-                rotation *= rotationStep;
-                float noiseDist = hash13(vec3(gl_FragCoord.xy, i));
-                vec2 pixelOffset = rotation * noiseDist * pixelRadius;
+            vec3 shadowColor = vec3(0.0);
+            for (int i = 0; i < SHADOW_PCF_SAMPLES; i++) {
+                #ifdef IRIS_FEATURE_SSBO
+                    vec2 pixelOffset = (rotation * pcfDiskOffset[i]) * pixelRadius;
+                #else
+                    rotation *= rotationStep;
+                    float noiseDist = hash13(vec3(gl_FragCoord.xy, i));
+                    vec2 pixelOffset = rotation * noiseDist * pixelRadius;
+                #endif
 
                 vec4 sampleColor = vec4(1.0);
 
@@ -71,29 +80,40 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
                 shadowColor += sampleColor.rgb;
             }
 
-            return shadowColor / sampleCount;
+            return shadowColor * rcp(SHADOW_PCF_SAMPLES);
         }
     #else
-        float GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
-            float bias = GetShadowBias(geoNoL);
+        float GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in float bias) {
+            //float bias = GetShadowBias(geoNoL);
 
-            float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
-            vec2 rotation = vec2(cos(startAngle), sin(startAngle));
+            #ifdef IRIS_FEATURE_SSBO
+                float dither = InterleavedGradientNoise(gl_FragCoord.xy);
+                float angle = fract(dither) * TAU;
+                float s = sin(angle), c = cos(angle);
+                mat2 rotation = mat2(c, -s, s, c);
+            #else
+                float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
+                vec2 rotation = vec2(cos(startAngle), sin(startAngle));
 
-            float angleDiff = PI * -2.0 / sampleCount;
-            vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
-            mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
+                const float angleDiff = -(PI * 2.0) / SHADOW_PCF_SAMPLES;
+                const vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
+                const mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
+            #endif
 
             float shadow = 0.0;
-            for (int i = 0; i < sampleCount; i++) {
-                rotation *= rotationStep;
-                float noiseDist = hash13(vec3(gl_FragCoord.xy, i));
-                vec2 pixelOffset = rotation * noiseDist * pixelRadius;
+            for (int i = 0; i < SHADOW_PCF_SAMPLES; i++) {
+                #ifdef IRIS_FEATURE_SSBO
+                    vec2 pixelOffset = (rotation * pcfDiskOffset[i]) * pixelRadius;
+                #else
+                    rotation *= rotationStep;
+                    float noiseDist = hash13(vec3(gl_FragCoord.xy, i));
+                    vec2 pixelOffset = rotation * noiseDist * pixelRadius;
+                #endif
 
                 shadow += 1.0 - CompareDepth(shadowPos, pixelOffset, bias);
             }
 
-            return shadow / sampleCount;
+            return shadow * rcp(SHADOW_PCF_SAMPLES);
         }
     #endif
 
@@ -115,20 +135,31 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
 
 #if SHADOW_FILTER == 2
     // PCF + PCSS
-    float FindBlockerDistance(const in vec3 shadowPos, const in vec2 pixelRadius, const in int sampleCount) {
-        float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
-        vec2 rotation = vec2(cos(startAngle), sin(startAngle));
+    float FindBlockerDistance(const in vec3 shadowPos, const in vec2 pixelRadius, const in float bias) {
+        #ifdef IRIS_FEATURE_SSBO
+            float dither = InterleavedGradientNoise(gl_FragCoord.xy);
+            float angle = fract(dither) * TAU;
+            float s = sin(angle), c = cos(angle);
+            mat2 rotation = mat2(c, -s, s, c);
+        #else
+            float startAngle = hash12(gl_FragCoord.xy) * (2.0 * PI);
+            vec2 rotation = vec2(cos(startAngle), sin(startAngle));
 
-        float angleDiff = PI * -2.0 / sampleCount;
-        vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
-        mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
+            const float angleDiff = -(PI * 2.0) / SHADOW_PCSS_SAMPLES;
+            const vec2 angleStep = vec2(cos(angleDiff), sin(angleDiff));
+            const mat2 rotationStep = mat2(angleStep, -angleStep.y, angleStep.x);
+        #endif
         
-        int blockers = 0;
-        float avgBlockerDistance = 0;
-        for (int i = 0; i < sampleCount; i++) {
-            rotation *= rotationStep;
-            float noiseDist = hash13(vec3(gl_FragCoord.xy, i + 100.0));
-            vec2 pixelOffset = rotation * noiseDist * pixelRadius;
+        float blockers = 0.0;
+        float avgBlockerDistance = 0.0;
+        for (int i = 0; i < SHADOW_PCSS_SAMPLES; i++) {
+            #ifdef IRIS_FEATURE_SSBO
+                vec2 pixelOffset = (rotation * pcssDiskOffset[i]) * pixelRadius;
+            #else
+                rotation *= rotationStep;
+                float noiseDist = hash13(vec3(gl_FragCoord.xy, i + 100.0));
+                vec2 pixelOffset = rotation * noiseDist * pixelRadius;
+            #endif
 
             #if SHADOW_COLORS == SHADOW_COLOR_IGNORED
                 float texDepth = texture(shadowtex1, shadowPos.xy + pixelOffset).r;
@@ -136,27 +167,24 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
                 float texDepth = texture(shadowtex0, shadowPos.xy + pixelOffset).r;
             #endif
 
-            if (texDepth < shadowPos.z) {
-                avgBlockerDistance += texDepth;
-                blockers++;
-            }
+            float hitDist = max((shadowPos.z - bias) - texDepth, 0.0);
+
+            avgBlockerDistance += hitDist * 256.0;
+            blockers += step(0.0, hitDist);
         }
 
-        return blockers > 0 ? avgBlockerDistance / blockers : 0.0;
+        return blockers > 0 ? avgBlockerDistance / blockers : -1.0;
     }
 
     #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
         vec3 GetShadowColor(const in vec3 shadowPos) {
             vec2 pixelRadius = GetShadowPixelRadius(ShadowPCFSize);
+            float bias = GetShadowBias(geoNoL);
 
             // blocker search
-            int blockerSampleCount = SHADOW_PCSS_SAMPLES;
-            if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
-            float blockerDistance = FindBlockerDistance(shadowPos, pixelRadius, blockerSampleCount);
+            float blockerDistance = FindBlockerDistance(shadowPos, pixelRadius, bias);
 
             if (blockerDistance <= 0.0) {
-                float bias = GetShadowBias(geoNoL);
-
                 float depthTrans = textureLod(shadowtex0, shadowPos.xy, 0).r;
                 if (shadowPos.z - bias < depthTrans) return vec3(1.0);
 
@@ -168,35 +196,20 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
                 return shadowColor.rgb;
             }
 
-            // penumbra estimation
-            float penumbraWidth = (shadowPos.z - blockerDistance) / blockerDistance;
-
-            // percentage-close filtering
-            pixelRadius *= min(penumbraWidth * 20.0, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
-
-            int pcfSampleCount = SHADOW_PCF_SAMPLES;
-            if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
-            return GetShadowing_PCF(shadowPos, pixelRadius, pcfSampleCount);
+            pixelRadius *= min(blockerDistance * SHADOW_PENUMBRA_SCALE, 1.0);
+            return GetShadowing_PCF(shadowPos, pixelRadius, bias);
         }
     #else
         float GetShadowFactor(const in vec3 shadowPos) {
             vec2 pixelRadius = GetShadowPixelRadius(ShadowPCFSize);
+            float bias = GetShadowBias(geoNoL);
 
             // blocker search
-            int blockerSampleCount = SHADOW_PCSS_SAMPLES;
-            if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) blockerSampleCount = 1;
-            float blockerDistance = FindBlockerDistance(shadowPos, pixelRadius, blockerSampleCount);
+            float blockerDistance = FindBlockerDistance(shadowPos, pixelRadius, bias);
             if (blockerDistance <= 0.0) return 1.0;
 
-            // penumbra estimation
-            float penumbraWidth = (shadowPos.z - blockerDistance) / blockerDistance;
-
-            // percentage-close filtering
-            pixelRadius *= min(penumbraWidth * SHADOW_PENUMBRA_SCALE, 1.0); // * SHADOW_LIGHT_SIZE * PCSS_NEAR / shadowPos.z;
-
-            int pcfSampleCount = SHADOW_PCF_SAMPLES;
-            if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) pcfSampleCount = 1;
-            return 1.0 - GetShadowing_PCF(shadowPos, pixelRadius, pcfSampleCount);
+            pixelRadius *= min(blockerDistance * SHADOW_PENUMBRA_SCALE, 1.0);
+            return 1.0 - GetShadowing_PCF(shadowPos, pixelRadius, bias);
         }
     #endif
 #elif SHADOW_FILTER == 1
@@ -204,18 +217,16 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
     #if SHADOW_COLORS == SHADOW_COLOR_ENABLED
         vec3 GetShadowColor(const in vec3 shadowPos) {
             vec2 pixelRadius = GetShadowPixelRadius(ShadowPCFSize);
+            float bias = GetShadowBias(geoNoL);
 
-            int sampleCount = SHADOW_PCF_SAMPLES;
-            if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
-            return GetShadowing_PCF(shadowPos, pixelRadius, sampleCount);
+            return GetShadowing_PCF(shadowPos, pixelRadius, bias);
         }
     #else
         float GetShadowFactor(const in vec3 shadowPos) {
             vec2 pixelRadius = GetShadowPixelRadius(ShadowPCFSize);
+            float bias = GetShadowBias(geoNoL);
 
-            int sampleCount = SHADOW_PCF_SAMPLES;
-            if (pixelRadius.x <= shadowPixelSize && pixelRadius.y <= shadowPixelSize) sampleCount = 1;
-            return 1.0 - GetShadowing_PCF(shadowPos, pixelRadius, sampleCount);
+            return 1.0 - GetShadowing_PCF(shadowPos, pixelRadius, bias);
         }
     #endif
 #elif SHADOW_FILTER == 0
