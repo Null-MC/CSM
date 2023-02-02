@@ -2,7 +2,7 @@
 
 A very minimal proof-of-concept demo for using Cascaded Shadow Mapping in Minecraft. This is meant to serve as a learning resource or template for other works, not as a final product itself. 
 
-:zap: For best performance, use Iris 1.6 or later.
+:zap: For best performance, use Iris 1.6 or later (includes SSBO support).
 
 
 ## Shadow Types
@@ -35,7 +35,8 @@ Since there is no access to the CPU side for splitting the frustum, culling, and
 
 
 ### Special thanks to:
-- Balint: Providing a correct projection matrix function, waving leaves, and soft-shadow disk sampling.
+- Balint: Providing a correct projection matrix function, waving leaves.
+- Tech: Soft-shadows with vogel disk & interleaved-gradient-noise.
 - Zombye: Providing a correct block-snapping function.
 - BuilderBoy: Providing player detection.
 - Lith: Providing entity detection.
