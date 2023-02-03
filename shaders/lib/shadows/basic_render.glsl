@@ -84,8 +84,6 @@ float CompareDepth(const in vec3 shadowPos, const in vec2 offset, const in float
         }
     #else
         float GetShadowing_PCF(const in vec3 shadowPos, const in vec2 pixelRadius, const in float bias) {
-            //float bias = GetShadowBias(geoNoL);
-
             #ifdef IRIS_FEATURE_SSBO
                 float dither = InterleavedGradientNoise(gl_FragCoord.xy);
                 float angle = fract(dither) * TAU;

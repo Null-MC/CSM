@@ -15,7 +15,6 @@ const ivec3 workGroups = ivec3(4, 1, 1);
         vec2 shadowProjectionSize[4];   // 32
         vec2 shadowProjectionPos[4];    // 32
         mat4 cascadeProjection[4];      // 256
-
         vec2 cascadeViewMin[4];         // 32
         vec2 cascadeViewMax[4];         // 32
     };

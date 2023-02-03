@@ -41,14 +41,6 @@ bool IsSampleWithinCascade(const in vec2 shadowPos, const in int cascade, const 
     return all(greaterThan(shadowPos, clipMin)) && all(lessThan(shadowPos, clipMax));
 }
 
-// int GetShadowCascade(const in vec3 shadowViewPos, const in float blockRadius) {
-//     if (CascadeContainsProjection(shadowViewPos, 0, blockRadius)) return 0;
-//     if (CascadeContainsProjection(shadowViewPos, 1, blockRadius)) return 1;
-//     if (CascadeContainsProjection(shadowViewPos, 2, blockRadius)) return 2;
-//     if (CascadeContainsProjection(shadowViewPos, 3, blockRadius)) return 3;
-//     return -1;
-// }
-
 int GetShadowCascade(const in vec3 shadowPos[4], const in float blockRadius) {
     if (IsSampleWithinCascade(shadowPos[0].xy, 0, blockRadius)) return 0;
     if (IsSampleWithinCascade(shadowPos[1].xy, 1, blockRadius)) return 1;
