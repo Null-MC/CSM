@@ -42,8 +42,6 @@ const bool colortex2Clear = true;
 //#define SHADOW_ENABLE_HWCOMP
 //#define SHADOW_BLUR
 
-const float ShadowPCFSize = SHADOW_PCF_SIZE * 0.001;
-
 // Debug Options
 #define DEBUG_SHADOW_BUFFER 0 // [0 1 2 3]
 //#define DEBUG_CASCADE_TINT
@@ -63,6 +61,33 @@ const float ShadowPCFSize = SHADOW_PCF_SIZE * 0.001;
 #define TAU 6.2831853076
 #define EPSILON 1e-6
 #define GAMMA 2.2
+
+const float ShadowPCFSize = SHADOW_PCF_SIZE * 0.001;
+
+const bool shadowcolor0Nearest = false;
+const vec4 shadowcolor0ClearColor = vec4(1.0, 1.0, 1.0, 0.0);
+const bool shadowcolor0Clear = true;
+
+const float shadowDistanceRenderMul = 1.0;
+
+const float shadowDistance = 150; // [50 100 150 200 300 400 800]
+const int shadowMapResolution = 2048; // [128 256 512 1024 2048 4096 8192]
+
+#ifdef MC_SHADOW_QUALITY
+    const float shadowMapSize = shadowMapResolution * MC_SHADOW_QUALITY;
+#else
+    const float shadowMapSize = shadowMapResolution;
+#endif
+
+const float shadowPixelSize = 1.0 / shadowMapSize;
+
+const bool generateShadowMipmap = false;
+
+#ifdef SHADOW_ENABLE_HWCOMP
+    const bool shadowHardwareFiltering = true;
+    const bool shadowtex0Nearest = false;
+    const bool shadowtex1Nearest = false;
+#endif
 
 
 #if MC_VERSION < 11700
